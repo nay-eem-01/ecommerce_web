@@ -9,7 +9,7 @@ into the phase's base branch (see `.claude/skills/git-workflow`).
 
 **Legend:** ✅ done · 🔄 in progress · ⬜ not started
 
-**Progress:** 6 of 7 steps done
+**Progress:** 7 of 7 steps done. Phase 2 is complete.
 
 ## Phase 2 - Storefront (`feat/storefront-base`)
 
@@ -21,4 +21,4 @@ into the phase's base branch (see `.claude/skills/git-workflow`).
 | 2.4 | Cart page priced by the quote, header badge, wishlist hearts and quick add on cards, save for later | `feat/cart` | ✅ |
 | 2.5 | Checkout with Idempotency-Key, confirmation, payment redirect and result, retry payment, order page, guest tracking, help | `feat/checkout` | ✅ |
 | 2.6 | Phone-code sign-in with cart and wishlist merge; account: overview, orders, wishlist, addresses | `feat/account` | ✅ |
-| 2.7 | Playwright end-to-end: browse, cart, checkout, track, sign in | `test/e2e` | ⬜ |
+| 2.7 | Playwright end-to-end: browse, cart, checkout, track, online payment, sign in, two tabs; the cross-tab refresh fix it found | `test/e2e` | ✅ |

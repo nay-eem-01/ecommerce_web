@@ -35,7 +35,8 @@ Library, oxlint, Playwright.
 ## Auth
 
 Access token in memory; refresh token in `localStorage` (`senpai.refreshToken`) until the backend offers an HttpOnly
-cookie. Each refresh token works once: refresh only through `refreshSession()` (one shared in-flight call). Never log
+cookie. Each refresh token works once: refresh only through `refreshSession()` (one shared in-flight call, and a
+Web Lock across tabs that reads the token from storage inside the lock). Never log
 tokens or OTP codes.
 
 ## Rendering

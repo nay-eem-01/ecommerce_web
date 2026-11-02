@@ -9,18 +9,40 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
 
 - Phase 2 on `feat/storefront-base`: 2.1 scaffold (`chore/storefront-scaffold`) 2.2 catalog pages
   (`feat/catalog-pages`), 2.3 product page (`feat/product-page`) 2.4 cart (`feat/cart`), 2.5
-  checkout (`feat/checkout`) and 2.6 account (`feat/account`) done.
+  checkout (`feat/checkout`) and 2.6 account (`feat/account`) and 2.7
+  end-to-end tests (`test/e2e`) done. **Phase 2 is complete.**
 
 ## Next up
 
-1. 2.7 end-to-end tests.
+1. **Nayeem:** PR the steps in order (they are pushed to `nay-eem-01/ecommerce_web`) into
+   `feat/storefront-base`, then the base into `development`.
+2. **Backend:** `docs/BACKEND_REQUESTS.md`, first the refresh-token grace window.
+3. Real product photos and 36-frame turntables replace the stand-in renders as they are shot.
 
 ## Open items
 
-- The repository is local only: create `senpai-supply_web` on GitHub and push the branches.
 - `npm audit`: 3 moderate advisories in `openapi-typescript`'s dependencies (development tool only, not shipped).
 
 ---
+
+## 2026-11-02: End-to-end tests (step 2.7)
+
+**Done**
+- Playwright (`npm run e2e`) against a running development backend, on its own Vite server (5174): guest browse,
+  360 keys, colour and quantity, cart quote, cash checkout to Gazipur and tracking; search and URL filters; bKash
+  through the fake provider back to the result page; sign-in with the logged SMS code (`E2E_APP_LOG`), cart and
+  wishlist merge, member checkout, saved address, cancel; two tabs restoring one session together.
+- All five pass against the backend on `feat/email-notifications`. 82 unit and screen tests pass.
+
+**Bugs found and fixed**
+- Opening two tabs at once signed the shopper out: both spent the same single-use refresh token and the backend
+  revoked the session. Refreshes now run under a Web Lock and read the token inside it (`fix(api)` commit, unit test
+  and the two-tab e2e test, which fails without the fix).
+
+**Known limitations**
+- A reload in the middle of a load's own session restore still signs out (the rotated token never reaches storage);
+  needs the backend grace window (`docs/BACKEND_REQUESTS.md` 1).
+- The e2e run places real orders; use a development database.
 
 ## 2026-11-02: Sign-in and account (step 2.6)
 
@@ -64,7 +86,7 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
   guest returning from a payment page can be matched to the phone tracking needs.
 
 **Known limitations**
-- A guest's payment result relies on the return URL's hint (`docs/BACKEND_REQUESTS.md` 3).
+- A guest's payment result relies on the return URL's hint (`docs/BACKEND_REQUESTS.md` 4).
 
 ## 2026-11-02: Cart (step 2.4)
 
@@ -80,7 +102,7 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
 - "In stock, ships today" became "In stock": the API does not promise same-day dispatch.
 
 **Known limitations**
-- Finding a stale guest line costs one quote per line (`docs/BACKEND_REQUESTS.md` 2).
+- Finding a stale guest line costs one quote per line (`docs/BACKEND_REQUESTS.md` 3).
 
 ## 2026-11-02: Product page (step 2.3)
 
@@ -119,7 +141,7 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
 
 **Decisions**
 - Sorts are newest, price both ways and name (the API has no "featured"). Several ticked categories run one query
-  each and merge (`docs/BACKEND_REQUESTS.md` 5).
+  each and merge (`docs/BACKEND_REQUESTS.md` 6).
 - Gacha turns are practice draws until capsules are sold (roadmap 4.6).
 
 **Known limitations**
@@ -139,7 +161,7 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
 
 **Decisions**
 - Request types are generated; response types are written in `src/api/types.ts` because the backend's OpenAPI types
-  responses as the generic envelope (`docs/BACKEND_REQUESTS.md` 1).
+  responses as the generic envelope (`docs/BACKEND_REQUESTS.md` 2).
 - The prototype's own icon sprite and toast instead of an icon library and Sonner, to match it exactly.
 - Fonts: Dela Gothic One Latin plus only the Japanese slices holding the category signs, M PLUS 1p Latin. The
   stylesheet went from 780 KB to 39 KB.

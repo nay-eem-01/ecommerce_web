@@ -52,7 +52,7 @@ export function CheckoutPage() {
 
 function Checkout() {
   const cart = useCart()
-  const { status, user } = useSession()
+  const { status, user, updateUser } = useSession()
   const member = status === 'signed-in'
   const addresses = useAddresses(member)
   const saved = addresses.data?.find((a) => a.defaultAddress) ?? addresses.data?.[0]
@@ -129,6 +129,8 @@ function Checkout() {
         idempotencyKey.current,
       )
       rememberOrder(order)
+      // The backend names a nameless account after its first order; show that without a reload.
+      if (member && !user?.name) updateUser({ name: order.fullName })
       idempotencyKey.current = crypto.randomUUID()
       await cart.clear().catch(() => undefined)
       if (method === 'COD') {

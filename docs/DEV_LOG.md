@@ -7,12 +7,12 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
 
 ## Where we are
 
-- Phase 2 on `feat/storefront-base`: 2.1 scaffold (`chore/storefront-scaffold`) and 2.2 catalog pages
-  (`feat/catalog-pages`) done.
+- Phase 2 on `feat/storefront-base`: 2.1 scaffold (`chore/storefront-scaffold`) 2.2 catalog pages
+  (`feat/catalog-pages`) and 2.3 product page (`feat/product-page`) done.
 
 ## Next up
 
-1. 2.3 product page.
+1. 2.4 cart page.
 
 ## Open items
 
@@ -20,6 +20,28 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
 - `npm audit`: 3 moderate advisories in `openapi-typescript`'s dependencies (development tool only, not shipped).
 
 ---
+
+## 2026-11-02: Product page (step 2.3)
+
+**Done**
+- 360 viewer: drag or swipe with inertia, arrow keys turn 10°, auto-rotate, degree read-out and track, a short spin
+  on arrival (not with reduced motion). Plays `spinFrames` photos when the API has them (frame nearest the angle),
+  else the stand-in render; a colour swatch recolours it without resetting the angle. Views row adds real photos.
+- Buy box: maker, name, summary, price of the chosen option, saving, stock, the four-fact grid, option chips and
+  swatches (sold-out ones disabled and named), quantity, add to cart / buy now / reserve, wishlist, delivery, payment
+  methods and returns from the API.
+- Sticky section tabs (highlight follows the scroll), description, story with quote and picture, specs and box, size
+  guide, delivery and returns, reviews (summary, distribution, verified buyers, write and delete your own), "Goes
+  well with", mobile sticky buy bar.
+- Cart and wishlist stores (`features/cart/CartProvider.tsx`): guests in `localStorage` (validated on read), members
+  on `/api/cart` and `/api/wishlist`; adding sets the server line to its new total.
+
+**Decisions**
+- Pre-orders say "Reserve it" and the arrival month, not a deposit amount (the backend's deposit is informational).
+- Quantity follows the backend's limit (10) or the stock left while low.
+
+**Known limitations**
+- One size chart for every sized product (`lib/sizes.ts`), as in the prototype.
 
 ## 2026-11-02: Catalog pages (step 2.2)
 

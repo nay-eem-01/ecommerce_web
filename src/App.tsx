@@ -11,6 +11,7 @@ const page = <K extends string>(load: () => Promise<Record<K, ComponentType>>, n
   lazy(() => load().then((m) => ({ default: m[name] })))
 
 const SearchPage = page(() => import('./features/search/SearchPage'), 'SearchPage')
+const ProductPage = page(() => import('./features/product/ProductPage'), 'ProductPage')
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/shop/:category" element={<ListingPage />} />
         <Route path="/preorders" element={<ListingPage preorders />} />
         <Route path="/search" element={<SearchPage />} />
+        <Route path="/p/:slug" element={<ProductPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

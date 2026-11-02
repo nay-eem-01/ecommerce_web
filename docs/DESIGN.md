@@ -75,4 +75,8 @@ Each one keeps the layout and follows the honesty principle; the backend items a
 | "XL is sold out. Restock expected in 2 weeks." | "XL is sold out." | no restock dates in the API |
 | Search, empty: "Trending this week" | "New this week" | the API has no popularity order; the list is the newest products |
 | Photos that fail to load | the stand-in render | a card never shows a broken image |
+| Pre-order: "Reserve for ৳ 1,000", "Pay ৳ 1,000 now, the rest on delivery" | "Reserve it", "arrives January 2027" | the deposit is informational today (backend PLAN §7 Q1); nothing is charged at reserve time with cash on delivery |
+| Quantity up to 5 (pre-orders 3) | up to 10, or the stock left while low | the backend's per-item limit |
+| Viewer `role=img` | `role=slider` with the angle as its value | it takes arrow keys, so screen readers should hear a control |
+| Reviews: average and count | plus a 5-to-1 star distribution | the API sends it; it helps judge a small number of reviews |
 | Sample reviews and sample orders | the shopper's real reviews and orders | real data |

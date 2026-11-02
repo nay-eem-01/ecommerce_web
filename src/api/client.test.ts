@@ -64,6 +64,21 @@ describe('api', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
+  it('takes the refresh lock and spends the token another tab stored meanwhile', async () => {
+    startSession({ accessToken: 'old', refreshToken: 'refresh-1' })
+    const request = vi.fn(async (_name: string, callback: () => Promise<unknown>) => {
+      // While this tab waited for the lock, another tab rotated the token and stored its new one.
+      localStorage.setItem('senpai.refreshToken', 'refresh-from-other-tab')
+      return callback()
+    })
+    vi.stubGlobal('navigator', { ...navigator, locks: { request } })
+    const fetchMock = mockApi({ 'POST /api/auth/refresh-token': () => envelope(200, tokens) })
+    await refreshSession()
+    expect(request).toHaveBeenCalledWith('senpai.refresh', expect.any(Function))
+    expect(bodyOf(fetchMock.mock.calls[0][1])).toEqual({ refreshToken: 'refresh-from-other-tab' })
+    expect(localStorage.getItem('senpai.refreshToken')).toBe('refresh-2')
+  })
+
   it('ends the session when the refresh token is refused', async () => {
     startSession({ accessToken: 'old', refreshToken: 'refresh-1' })
     const lost = vi.fn()

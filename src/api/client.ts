@@ -15,6 +15,8 @@ const BASE_URL: string = import.meta.env?.VITE_API_BASE_URL ?? ''
 
 const REFRESH_TOKEN_KEY = 'senpai.refreshToken'
 const REFRESH_PATH = '/api/auth/refresh-token'
+/** Web Lock shared by every tab of the shop, so only one of them spends the refresh token at a time. */
+const REFRESH_LOCK = 'senpai.refresh'
 
 /** Refresh this long before the access token's `exp`, so a request never goes out with a token about to die. */
 const REFRESH_AHEAD_MS = 60_000
@@ -126,7 +128,19 @@ export function tokenExpiry(token: string): number | null {
   }
 }
 
-async function doRefresh(): Promise<TokenResponse> {
+/**
+ * Every tab restores its session on load by spending the stored refresh token, and the backend ends the session
+ * when a spent token is sent again. Two tabs opened together would do exactly that, so refreshes run one tab at a
+ * time under a Web Lock, each reading the token from storage only once it holds the lock: the second tab then
+ * spends the token the first one just stored. (Browsers without Web Locks refresh unguarded.)
+ */
+function doRefresh(): Promise<TokenResponse> {
+  const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined
+  // request() resolves to what the callback resolves to; its typing nests the promise.
+  return locks ? (locks.request(REFRESH_LOCK, refreshWithStoredToken) as unknown as Promise<TokenResponse>) : refreshWithStoredToken()
+}
+
+async function refreshWithStoredToken(): Promise<TokenResponse> {
   const refreshToken = readRefreshToken()
   if (!refreshToken) throw new ApiError(401, 'Please sign in again.')
   // A network failure throws before the try: the stored token is kept so a later attempt can still succeed.

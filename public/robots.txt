@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /checkout
+Disallow: /account
+Disallow: /orders
+Disallow: /sign-in

@@ -8,11 +8,11 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
 ## Where we are
 
 - Phase 2 on `feat/storefront-base`: 2.1 scaffold (`chore/storefront-scaffold`) 2.2 catalog pages
-  (`feat/catalog-pages`) and 2.3 product page (`feat/product-page`) done.
+  (`feat/catalog-pages`), 2.3 product page (`feat/product-page`) and 2.4 cart (`feat/cart`) done.
 
 ## Next up
 
-1. 2.4 cart page.
+1. 2.5 checkout.
 
 ## Open items
 
@@ -20,6 +20,22 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
 - `npm audit`: 3 moderate advisories in `openapi-typescript`'s dependencies (development tool only, not shipped).
 
 ---
+
+## 2026-11-02: Cart (step 2.4)
+
+**Done**
+- Cart page priced by `/api/checkout/quote` (Dhaka until checkout picks the district): lines with option, stock or
+  pre-order month, stepper, remove, save for later (moves to the wishlist); summary with free-delivery progress,
+  delivery fee, total and trust list. Checkout is blocked, with a reason on the line, when stock is short.
+- Header badge counts items; cards get the wishlist heart and one-tap add for products without options.
+- Members' archived lines are listed apart ("No longer available") and removed by item id. A guest cart holding an
+  archived product (the quote answers 404) is re-quoted line by line and the stale line dropped, with a toast.
+
+**Decisions**
+- "In stock, ships today" became "In stock": the API does not promise same-day dispatch.
+
+**Known limitations**
+- Finding a stale guest line costs one quote per line (`docs/BACKEND_REQUESTS.md` 2).
 
 ## 2026-11-02: Product page (step 2.3)
 
@@ -58,7 +74,7 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
 
 **Decisions**
 - Sorts are newest, price both ways and name (the API has no "featured"). Several ticked categories run one query
-  each and merge (`docs/BACKEND_REQUESTS.md` 3).
+  each and merge (`docs/BACKEND_REQUESTS.md` 4).
 - Gacha turns are practice draws until capsules are sold (roadmap 4.6).
 
 **Known limitations**

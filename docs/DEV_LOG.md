@@ -8,11 +8,12 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
 ## Where we are
 
 - Phase 2 on `feat/storefront-base`: 2.1 scaffold (`chore/storefront-scaffold`) 2.2 catalog pages
-  (`feat/catalog-pages`), 2.3 product page (`feat/product-page`) and 2.4 cart (`feat/cart`) done.
+  (`feat/catalog-pages`), 2.3 product page (`feat/product-page`) 2.4 cart (`feat/cart`) and 2.5
+  checkout (`feat/checkout`) done.
 
 ## Next up
 
-1. 2.5 checkout.
+1. 2.6 sign-in and account.
 
 ## Open items
 
@@ -20,6 +21,30 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
 - `npm audit`: 3 moderate advisories in `openapi-typescript`'s dependencies (development tool only, not shipped).
 
 ---
+
+## 2026-11-02: Checkout (step 2.5)
+
+**Done**
+- Checkout in two steps as the prototype: delivery (name, +88 phone, district from the API, area, address, optional
+  email and rider note) and payment (only the methods the API enables). Fields validate on blur; submit lists what
+  to fix with links that focus each field. The summary re-quotes for the chosen district.
+- One `Idempotency-Key` per attempt, reused after a network error ("you will not be charged twice"), replaced after
+  success. 409 (stock changed) re-quotes and explains.
+- Cash orders go to the confirmation (order number, where the details went, real timeline, what to have ready, the
+  account offer). Online orders go to the provider; `/checkout/result` reloads the order and offers "Try paying
+  again" (`POST /api/orders/pay`) on failure.
+- `/orders/:orderNumber` for members (timeline, items, totals, address, pay now, buy again, cancel while placed);
+  `/track` for guests (the order email links to both); `/help` for the footer links.
+- Members' saved default address prefills checkout; their address is saved on the first order.
+- Checked against the running backend: a cash order to Gazipur (৳ 130 delivery) and a bKash order through the
+  development fake provider, back to the result page as paid.
+
+**Decisions**
+- The order just placed is kept in `sessionStorage` (this tab only) so the confirmation survives a reload and a
+  guest returning from a payment page can be matched to the phone tracking needs.
+
+**Known limitations**
+- A guest's payment result relies on the return URL's hint (`docs/BACKEND_REQUESTS.md` 3).
 
 ## 2026-11-02: Cart (step 2.4)
 
@@ -74,7 +99,7 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
 
 **Decisions**
 - Sorts are newest, price both ways and name (the API has no "featured"). Several ticked categories run one query
-  each and merge (`docs/BACKEND_REQUESTS.md` 4).
+  each and merge (`docs/BACKEND_REQUESTS.md` 5).
 - Gacha turns are practice draws until capsules are sold (roadmap 4.6).
 
 **Known limitations**

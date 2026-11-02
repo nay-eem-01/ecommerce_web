@@ -8,12 +8,12 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
 ## Where we are
 
 - Phase 2 on `feat/storefront-base`: 2.1 scaffold (`chore/storefront-scaffold`) 2.2 catalog pages
-  (`feat/catalog-pages`), 2.3 product page (`feat/product-page`) 2.4 cart (`feat/cart`) and 2.5
-  checkout (`feat/checkout`) done.
+  (`feat/catalog-pages`), 2.3 product page (`feat/product-page`) 2.4 cart (`feat/cart`), 2.5
+  checkout (`feat/checkout`) and 2.6 account (`feat/account`) done.
 
 ## Next up
 
-1. 2.6 sign-in and account.
+1. 2.7 end-to-end tests.
 
 ## Open items
 
@@ -21,6 +21,26 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
 - `npm audit`: 3 moderate advisories in `openapi-typescript`'s dependencies (development tool only, not shipped).
 
 ---
+
+## 2026-11-02: Sign-in and account (step 2.6)
+
+**Done**
+- Sign-in: mobile number, then the 6-digit code (signs in as soon as 6 digits are typed); resend after the
+  backend's cooldown with a countdown; the backend's messages for wrong codes and too many tries; "continue as a
+  guest" when sign-in came from checkout. `?back=` only follows same-site paths.
+- After sign-in the browser cart goes to `/api/cart/merge` and saved hearts to the account's wishlist, then the
+  browser copies are cleared (kept if the merge fails).
+- Account (signed-in only, with a redirect back after sign-in): overview (name, phone, edit details, sign out,
+  latest order, picked for you), my orders (progress bar, buy again, track or cancel, write a review), wishlist,
+  addresses (add, edit, remove, default).
+- Checked against the running backend: code from the development SMS log, guest cart and heart merged, session kept
+  across a reload, member checkout saved the address and named the account.
+
+**Decisions**
+- No name field at sign-in, as in the prototype; the account takes the name from the first order or "Add your name".
+
+**Known limitations**
+- "Picked for you" is the newest in-stock products; there is no recommendation API.
 
 ## 2026-11-02: Checkout (step 2.5)
 

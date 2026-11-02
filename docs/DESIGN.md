@@ -82,4 +82,6 @@ Each one keeps the layout and follows the honesty principle; the backend items a
 | Confirmation timeline "Packed: today, before 6 pm", "With the rider: tomorrow" | the order's real history; next steps say "Next" / "Coming up", delivery uses the API's estimate | no dispatch times in the API |
 | bKash: "we send a payment request to your number" | "You approve the payment on bKash's page next" | the integration redirects to the provider's page |
 | Pre-order note "only its deposit is charged now" | names each pre-order and its arrival month | deposits are informational (backend PLAN §7 Q1) |
+| Account head: name, phone, sign out | plus "Edit details" (name, receipt email) | the API supports it and receipts need the email |
+| Wishlist page for guests | sign in first (hearts are kept and merged) | as the prototype: the profile pages ask to sign in |
 | Sample reviews and sample orders | the shopper's real reviews and orders | real data |

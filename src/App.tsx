@@ -1,5 +1,6 @@
 import { lazy, type ComponentType } from 'react'
 import { Route, Routes } from 'react-router-dom'
+import { RequireAuth } from './features/auth/RequireAuth'
 import { ListingPage } from './features/catalog/ListingPage'
 import { NotFoundPage } from './features/errors/NotFoundPage'
 import { HomePage } from './features/home/HomePage'
@@ -18,6 +19,12 @@ const PaymentResultPage = page(() => import('./features/checkout/PaymentResultPa
 const TrackPage = page(() => import('./features/orders/TrackPage'), 'TrackPage')
 const OrderPage = page(() => import('./features/orders/OrderPage'), 'OrderPage')
 const HelpPage = page(() => import('./features/site/HelpPage'), 'HelpPage')
+const SignInPage = page(() => import('./features/auth/SignInPage'), 'SignInPage')
+const AccountLayout = page(() => import('./features/account/AccountLayout'), 'AccountLayout')
+const OverviewPage = page(() => import('./features/account/AccountPages'), 'OverviewPage')
+const OrdersPage = page(() => import('./features/account/AccountPages'), 'OrdersPage')
+const WishlistPage = page(() => import('./features/account/AccountPages'), 'WishlistPage')
+const AddressesPage = page(() => import('./features/account/AccountPages'), 'AddressesPage')
 const ProductPage = page(() => import('./features/product/ProductPage'), 'ProductPage')
 
 export default function App() {
@@ -37,6 +44,15 @@ export default function App() {
         <Route path="/track" element={<TrackPage />} />
         <Route path="/orders/:orderNumber" element={<OrderPage />} />
         <Route path="/help" element={<HelpPage />} />
+        <Route path="/sign-in" element={<SignInPage />} />
+        <Route element={<RequireAuth />}>
+          <Route element={<AccountLayout />}>
+            <Route path="/account" element={<OverviewPage />} />
+            <Route path="/account/orders" element={<OrdersPage />} />
+            <Route path="/account/wishlist" element={<WishlistPage />} />
+            <Route path="/account/addresses" element={<AddressesPage />} />
+          </Route>
+        </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

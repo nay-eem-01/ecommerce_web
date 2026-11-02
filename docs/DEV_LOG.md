@@ -14,14 +14,13 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
 
 ## Next up
 
-1. **Nayeem:** create `senpai-supply_web` on GitHub, push the branches, PR the steps in order into
+1. **Nayeem:** PR the steps in order (they are pushed to `nay-eem-01/ecommerce_web`) into
    `feat/storefront-base`, then the base into `development`.
 2. **Backend:** `docs/BACKEND_REQUESTS.md`, first the refresh-token grace window.
 3. Real product photos and 36-frame turntables replace the stand-in renders as they are shot.
 
 ## Open items
 
-- The repository is local only: create `senpai-supply_web` on GitHub and push the branches.
 - `npm audit`: 3 moderate advisories in `openapi-typescript`'s dependencies (development tool only, not shipped).
 
 ---

@@ -73,4 +73,6 @@ Each one keeps the layout and follows the honesty principle; the backend items a
 | Confirmation "sent the details by SMS" | "emailed the details" when an email was given | the backend sends email, not SMS |
 | Photo thumbnails (Front, Back, Detail, In hand) as labelled slots | the product's real photos; only 360° when there are none | real data |
 | "XL is sold out. Restock expected in 2 weeks." | "XL is sold out." | no restock dates in the API |
+| Search, empty: "Trending this week" | "New this week" | the API has no popularity order; the list is the newest products |
+| Photos that fail to load | the stand-in render | a card never shows a broken image |
 | Sample reviews and sample orders | the shopper's real reviews and orders | real data |

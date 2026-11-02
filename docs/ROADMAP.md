@@ -9,14 +9,14 @@ into the phase's base branch (see `.claude/skills/git-workflow`).
 
 **Legend:** ✅ done · 🔄 in progress · ⬜ not started
 
-**Progress:** 1 of 7 steps done
+**Progress:** 2 of 7 steps done
 
 ## Phase 2 - Storefront (`feat/storefront-base`)
 
 | # | Step | Branch | Status |
 |---|---|---|---|
 | 2.1 | Scaffold (Vite, React 19, TypeScript, Tailwind 4, Router, Query, Vitest, oxlint), the prototype stylesheet and fonts, API client with single-flight refresh, session, header and footer, docs | `chore/storefront-scaffold` | ✅ |
-| 2.2 | Home, category lists with filters and sort, search; product card; 360 stand-in renderer | `feat/catalog-pages` | ⬜ |
+| 2.2 | Home, category lists with filters and sort, search; product card; 360 stand-in renderer | `feat/catalog-pages` | ✅ |
 | 2.3 | Product page: 360 viewer, buy box, options, section tabs, story, specs, size guide, delivery, reviews, related, sticky buy bar | `feat/product-page` | ⬜ |
 | 2.4 | Cart (guest in the browser, member on the server) priced by the quote; wishlist hearts; save for later | `feat/cart` | ⬜ |
 | 2.5 | Checkout with Idempotency-Key, confirmation, payment redirect and result, retry payment, order page, guest tracking, help | `feat/checkout` | ⬜ |

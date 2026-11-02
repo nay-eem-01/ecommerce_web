@@ -79,4 +79,7 @@ Each one keeps the layout and follows the honesty principle; the backend items a
 | Quantity up to 5 (pre-orders 3) | up to 10, or the stock left while low | the backend's per-item limit |
 | Viewer `role=img` | `role=slider` with the angle as its value | it takes arrow keys, so screen readers should hear a control |
 | Reviews: average and count | plus a 5-to-1 star distribution | the API sends it; it helps judge a small number of reviews |
+| Confirmation timeline "Packed: today, before 6 pm", "With the rider: tomorrow" | the order's real history; next steps say "Next" / "Coming up", delivery uses the API's estimate | no dispatch times in the API |
+| bKash: "we send a payment request to your number" | "You approve the payment on bKash's page next" | the integration redirects to the provider's page |
+| Pre-order note "only its deposit is charged now" | names each pre-order and its arrival month | deposits are informational (backend PLAN §7 Q1) |
 | Sample reviews and sample orders | the shopper's real reviews and orders | real data |

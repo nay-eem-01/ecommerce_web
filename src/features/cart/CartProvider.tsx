@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
-import { clearServerCart, fetchCart, fetchWishlistIds, putCartLine, removeFromWishlist, saveToWishlist } from '../../api/cart'
+import { clearServerCart, deleteCartLine, fetchCart, fetchWishlistIds, putCartLine, removeFromWishlist, saveToWishlist } from '../../api/cart'
 import type { Cart, CartLine, LineInput } from '../../api/types'
 import { useSession } from '../auth/session'
 import { MAX_QTY, addLine, readGuestCart, readGuestWishlist, sameLine, setLine, writeGuestCart, writeGuestWishlist } from './guestStorage'
@@ -15,6 +15,8 @@ interface CartApi {
   add: (line: LineInput) => Promise<void>
   setQuantity: (line: LineInput) => Promise<void>
   clear: () => Promise<void>
+  /** Members: removes a server line by id (works for archived products, which can no longer be priced). */
+  removeItem: (itemId: number) => Promise<void>
   wishlist: Set<number>
   /** Saves or removes; resolves to true when the product is now saved. */
   toggleWish: (productId: number) => Promise<boolean>
@@ -83,6 +85,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setServerCart(await clearServerCart())
   }, [member, setServerCart, updateGuest])
 
+  const removeItem = useCallback(
+    async (itemId: number) => {
+      setServerCart(await deleteCartLine(itemId))
+    },
+    [setServerCart],
+  )
+
   const toggleWish = useCallback(
     async (productId: number) => {
       if (!member) {
@@ -117,10 +126,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       add,
       setQuantity,
       clear,
+      removeItem,
       wishlist: new Set(member ? (wishIds.data ?? []) : guestWish),
       toggleWish,
     }
-  }, [member, cart.data, cart.isSuccess, guestLines, wishIds.data, guestWish, add, setQuantity, clear, toggleWish])
+  }, [member, cart.data, cart.isSuccess, guestLines, wishIds.data, guestWish, add, setQuantity, clear, removeItem, toggleWish])
 
   return <CartContext value={value}>{children}</CartContext>
 }

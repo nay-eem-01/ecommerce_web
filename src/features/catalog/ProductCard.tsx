@@ -1,8 +1,13 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { errorMessage } from '../../api/errors'
 import type { ProductSummary } from '../../api/types'
 import { tk } from '../../lib/money'
 import { stockLine } from '../../lib/stock'
 import { highlightParts } from '../../lib/text'
+import { Icon } from '../../ui/Icon'
+import { useToast } from '../../ui/Toast'
+import { useCart } from '../cart/CartProvider'
 import { ProductImage } from './ProductImage'
 
 /** The prototype's product card: picture, flag, name, spec, stock line, price and a quick action. */
@@ -11,6 +16,35 @@ export function ProductCard({ product: p, highlight }: { product: ProductSummary
   const parts = highlight ? highlightParts(p.name, highlight) : null
   const to = `/p/${p.slug}`
   const save = p.compareAtPrice && p.compareAtPrice > p.price ? p.compareAtPrice - p.price : 0
+  const cart = useCart()
+  const toast = useToast()
+  const [busy, setBusy] = useState(false)
+  const wished = cart.wishlist.has(p.id)
+  // One tap adds products without options; the others need a choice on the product page.
+  const quickAdd = !p.hasOptions && (p.stockState === 'IN_STOCK' || p.stockState === 'LOW_STOCK')
+
+  async function act(action: () => Promise<void>) {
+    setBusy(true)
+    try {
+      await action()
+    } catch (error) {
+      toast(errorMessage(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const wish = () =>
+    act(async () => {
+      const on = await cart.toggleWish(p.id)
+      toast(on ? 'Saved to your wishlist' : 'Removed from wishlist', on ? ['View', '/account/wishlist'] : null)
+    })
+  const add = () =>
+    act(async () => {
+      await cart.add({ productId: p.id, optionId: null, quantity: 1 })
+      toast(`Added to cart: ${p.name}`, ['View cart', '/cart'])
+    })
+
   return (
     <article className="card">
       {save > 0 ? (
@@ -18,6 +52,9 @@ export function ProductCard({ product: p, highlight }: { product: ProductSummary
       ) : p.stockState === 'PREORDER' ? (
         <span className="pill pre card-flag">Pre-order</span>
       ) : null}
+      <button className="heart" type="button" aria-pressed={wished} aria-label={`Save ${p.name} to wishlist`} disabled={busy} onClick={wish}>
+        <Icon name="heart" />
+      </button>
       <div className="slot card-img">
         <ProductImage slug={p.slug} categorySlug={p.categorySlug} url={p.thumbnailUrl} alt={p.name} />
       </div>
@@ -36,9 +73,16 @@ export function ProductCard({ product: p, highlight }: { product: ProductSummary
       <span className={`card-stock ${stock.tone}`}>{stock.text}</span>
       <div className="card-row">
         <span className="price">{tk(p.price)}</span>
-        <Link className="quick" to={to}>
-          {p.stockState === 'PREORDER' ? 'Reserve' : p.stockState === 'SOLD_OUT' ? 'View' : p.hasOptions ? 'Choose' : 'View'}
-        </Link>
+        {quickAdd ? (
+          <button className="quick" type="button" aria-label={`Add ${p.name} to cart`} disabled={busy} onClick={add}>
+            <Icon name="cart" />
+            <span>Add</span>
+          </button>
+        ) : (
+          <Link className="quick" to={to}>
+            {p.stockState === 'PREORDER' ? 'Reserve' : p.stockState === 'SOLD_OUT' ? 'View' : 'Choose'}
+          </Link>
+        )}
       </div>
     </article>
   )

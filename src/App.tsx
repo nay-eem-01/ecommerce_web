@@ -1,6 +1,7 @@
 import { lazy, type ComponentType } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { RequireAuth } from './features/auth/RequireAuth'
+import { CharactersPage } from './features/catalog/CharactersPage'
 import { ListingPage } from './features/catalog/ListingPage'
 import { NotFoundPage } from './features/errors/NotFoundPage'
 import { HomePage } from './features/home/HomePage'
@@ -32,9 +33,12 @@ export default function App() {
     <Routes>
       <Route element={<AppLayout />}>
         <Route path="/" element={<HomePage />} />
-        <Route path="/shop" element={<ListingPage />} />
-        <Route path="/shop/:category" element={<ListingPage />} />
-        <Route path="/preorders" element={<ListingPage preorders />} />
+        <Route path="/shop" element={<ListingPage mode="all" />} />
+        <Route path="/shop/:category" element={<ListingPage mode="category" />} />
+        <Route path="/preorders" element={<ListingPage mode="preorders" />} />
+        <Route path="/sets" element={<ListingPage mode="sets" />} />
+        <Route path="/characters" element={<CharactersPage />} />
+        <Route path="/characters/:character" element={<ListingPage mode="character" />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/p/:slug" element={<ProductPage />} />
         <Route path="/cart" element={<CartPage />} />

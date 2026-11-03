@@ -135,7 +135,7 @@ describe('search', () => {
 })
 
 describe('product image', () => {
-  it('falls back to the stand-in render when a photo fails to load', async () => {
+  it('falls back to the stand-in art when a photo fails to load', async () => {
     const { ProductImage } = await import('./ProductImage')
     const { render, fireEvent } = await import('@testing-library/react')
     const { container } = render(<ProductImage slug="ronin-swordsman" url="https://cdn.invalid/x.jpg" alt="Ronin" />)
@@ -143,6 +143,6 @@ describe('product image', () => {
     expect(img).not.toBeNull()
     fireEvent.error(img!)
     expect(container.querySelector('img')).toBeNull()
-    expect(container.querySelector('canvas')).not.toBeNull()
+    expect(container.querySelector('svg')).not.toBeNull()
   })
 })

@@ -319,7 +319,7 @@ function Checkout() {
             {(q?.lines ?? []).map((l) => (
               <div className="mini" key={`${l.productId}-${l.optionId}`}>
                 <span className="slot">
-                  <ProductImage slug={l.slug} url={l.thumbnailUrl} width={112} />
+                  <ProductImage slug={l.slug} url={l.thumbnailUrl} />
                   <span className="q">{l.quantity}</span>
                 </span>
                 <div style={{ minWidth: 0 }}>

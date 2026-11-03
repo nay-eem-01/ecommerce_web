@@ -127,7 +127,7 @@ function Product({ product: p }: { product: ProductDetail }) {
               {p.storyImage ? (
                 <img src={p.storyImage.url} alt={p.storyImage.altText ?? ''} loading="lazy" />
               ) : (
-                <ProductImage slug={p.slug} categorySlug={p.category.slug} width={480} ratio={0.75} angle={2.2} />
+                <ProductImage slug={p.slug} categorySlug={p.category.slug} />
               )}
             </div>
           </div>

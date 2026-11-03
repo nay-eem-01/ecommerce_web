@@ -180,7 +180,7 @@ function Item({ item, delivered }: { item: OrderItem; delivered: boolean }) {
   return (
     <div className="mini">
       <Link className="slot" to={`/p/${item.slug}`} aria-label={item.name}>
-        <ProductImage slug={item.slug} url={item.thumbnailUrl} width={112} />
+        <ProductImage slug={item.slug} url={item.thumbnailUrl} />
       </Link>
       <div style={{ minWidth: 0 }}>
         <Link to={`/p/${item.slug}`} style={{ textDecoration: 'none' }}>

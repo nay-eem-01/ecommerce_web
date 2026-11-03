@@ -1,4 +1,4 @@
-import { api, clearSession, getAccessToken, refreshSession, setSessionLostHandler, startSession, tokenExpiry } from './client'
+import { api, clearSession, withQuery, getAccessToken, refreshSession, setSessionLostHandler, startSession, tokenExpiry } from './client'
 import { ApiError } from './errors'
 import { bodyOf, envelope, mockApi } from '../test/api'
 import { tokens } from '../test/fixtures'
@@ -104,6 +104,14 @@ describe('api', () => {
     })
     await api('/api/users/me')
     expect(String(fetchMock.mock.calls[0][0])).toContain('/refresh-token')
+  })
+
+  it('adds parameters to a path that already has repeated tag values', () => {
+    expect(withQuery('/api/products?tag=Capacity%3A750%20ml', { pageNo: 0, category: 'bottles' })).toBe(
+      '/api/products?tag=Capacity%3A750%20ml&pageNo=0&category=bottles',
+    )
+    expect(withQuery('/api/products', { q: '' })).toBe('/api/products')
+    expect(withQuery('/api/products', { q: 'wig' })).toBe('/api/products?q=wig')
   })
 
   it('reads the expiry of a JWT', () => {

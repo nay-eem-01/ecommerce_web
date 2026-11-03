@@ -55,7 +55,7 @@ export function HomePage() {
         <div className="feature">
           <div className="slot">
             {feature && (
-              <ProductImage slug={feature.slug} categorySlug={feature.categorySlug} url={feature.thumbnailUrl} alt={feature.name} width={460} angle={0.6} />
+              <ProductImage slug={feature.slug} categorySlug={feature.categorySlug} url={feature.thumbnailUrl} alt={feature.name} />
             )}
           </div>
           <span className="sign" aria-hidden="true">

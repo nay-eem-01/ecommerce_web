@@ -1,10 +1,31 @@
-import { keepPreviousData, useInfiniteQuery, useQueries, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useInfiniteQuery, useMutation, useQueries, useQuery } from '@tanstack/react-query'
 import { api } from './client'
-import type { Category, Page, ProductSummary } from './types'
+import type { Category, Character, Facets, Page, ProductSummary } from './types'
 
 export function useCategories() {
   // Categories change rarely; one fetch per visit is plenty.
   return useQuery({ queryKey: ['categories'], queryFn: () => api<Category[]>('/api/categories'), staleTime: 10 * 60_000 })
+}
+
+export function useCharacters() {
+  return useQuery({ queryKey: ['characters'], queryFn: () => api<Character[]>('/api/characters'), staleTime: 10 * 60_000 })
+}
+
+/** Filter groups (Capacity, Material, ...) with counts for a category or character. */
+export function useFacets(category?: string, character?: string) {
+  return useQuery({
+    queryKey: ['facets', category ?? null, character ?? null],
+    queryFn: () => api<Facets>('/api/products/facets', { params: { category, character } }),
+    staleTime: 5 * 60_000,
+  })
+}
+
+/** Early access to a coming-soon category: a phone and/or an email. */
+export function useEarlyAccess() {
+  return useMutation({
+    mutationFn: (body: { categorySlug: string; phone?: string; email?: string }) =>
+      api<null>('/api/early-access', { method: 'POST', body }),
+  })
 }
 
 export type ProductSort = 'newest' | 'price-asc' | 'price-desc' | 'name'
@@ -18,6 +39,10 @@ const SORTS: Record<ProductSort, { sortBy: string; ascOrDesc: 'asc' | 'desc' }> 
 
 export interface ProductQuery {
   category?: string
+  character?: string
+  /** "Capacity:750 ml" pairs; values of one group widen, groups narrow. */
+  tags?: string[]
+  set?: boolean
   q?: string
   inStock?: boolean
   preorder?: boolean
@@ -31,6 +56,8 @@ function params(query: ProductQuery, pageNo: number) {
   const sort = SORTS[query.sort ?? 'newest']
   return {
     category: query.category,
+    character: query.character,
+    set: query.set,
     q: query.q?.trim() || undefined,
     inStock: query.inStock || undefined,
     preorder: query.preorder || undefined,
@@ -43,7 +70,10 @@ function params(query: ProductQuery, pageNo: number) {
 }
 
 export function fetchProducts(query: ProductQuery, pageNo = 0, signal?: AbortSignal) {
-  return api<Page<ProductSummary>>('/api/products', { params: params(query, pageNo), signal })
+  // Repeated tag=… values go on the URL as is; the client's params object holds single values.
+  const tags = (query.tags ?? []).map((t) => `tag=${encodeURIComponent(t)}`).join('&')
+  const path = '/api/products' + (tags ? `?${tags}` : '')
+  return api<Page<ProductSummary>>(path, { params: params(query, pageNo), signal })
 }
 
 /** One page of products (home rows, trending). */

@@ -162,7 +162,7 @@ function Line({ line }: { line: QuoteLine }) {
   return (
     <div className="line-item">
       <Link className="slot" to={to} aria-label={line.name}>
-        <ProductImage slug={line.slug} url={line.thumbnailUrl} width={160} />
+        <ProductImage slug={line.slug} url={line.thumbnailUrl} />
       </Link>
       <div style={{ minWidth: 0 }}>
         <Link className="nm" to={to}>
@@ -217,7 +217,7 @@ function UnavailableLine({ line }: { line: CartLine }) {
   return (
     <div className="line-item">
       <span className="slot" aria-hidden="true">
-        <ProductImage slug={line.slug} url={line.thumbnailUrl} width={160} />
+        <ProductImage slug={line.slug} url={line.thumbnailUrl} />
       </span>
       <div style={{ minWidth: 0 }}>
         <span className="nm">{line.name}</span>

@@ -2,9 +2,10 @@ import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { envelope, mockApi } from '../test/api'
-import { categories, tokens } from '../test/fixtures'
+import { categories, deliveryOptions, tokens } from '../test/fixtures'
 import { renderWithProviders, storeSession } from '../test/render'
 import { AppLayout } from './AppLayout'
+import { navItems } from './nav'
 
 function renderShell(path = '/') {
   return renderWithProviders(
@@ -17,35 +18,64 @@ function renderShell(path = '/') {
   )
 }
 
+const shopApi = () =>
+  mockApi({
+    'GET /api/categories': () => envelope(200, categories),
+    'GET /api/checkout/delivery-options': () => envelope(200, deliveryOptions),
+  })
+
+describe('store menu', () => {
+  it('lists New, the categories on sale, Characters, Sets, then what is coming soon', () => {
+    expect(navItems(categories)).toEqual([
+      { to: '/shop', label: 'New' },
+      { to: '/shop/figures', label: 'Figures' },
+      { to: '/shop/costumes', label: 'Costumes' },
+      { to: '/shop/bottles', label: 'Bottles' },
+      { to: '/shop/bags', label: 'Bags' },
+      { to: '/characters', label: 'Characters' },
+      { to: '/sets', label: 'Sets' },
+      { to: '/shop/apparel', label: 'Apparel', soon: true },
+    ])
+  })
+})
+
 describe('app shell', () => {
-  it('lists the categories from the API and marks the current one', async () => {
-    mockApi({ 'GET /api/categories': () => envelope(200, categories) })
-    renderShell('/shop/figures')
-    const nav = within(await screen.findByRole('navigation', { name: 'Categories' }))
-    expect(await nav.findByRole('link', { name: 'Figures' })).toHaveAttribute('aria-current', 'page')
-    expect(nav.getByRole('link', { name: 'Pre-orders' })).not.toHaveAttribute('aria-current')
+  it('marks the current category and shows apparel as coming soon', async () => {
+    shopApi()
+    renderShell('/shop/bottles')
+    const navs = await screen.findAllByRole('navigation', { name: 'Shop' })
+    const phone = within(navs[navs.length - 1])
+    expect(await phone.findByRole('link', { name: 'Bottles' })).toHaveClass('on')
+    expect(phone.getByRole('link', { name: /Apparel\s*soon/ })).toHaveAttribute('href', '/shop/apparel')
   })
 
-  it('sends the header search to the search page', async () => {
-    mockApi({ 'GET /api/categories': () => envelope(200, categories) })
+  it('announces cash on delivery and the free-delivery threshold', async () => {
+    shopApi()
     renderShell()
-    await userEvent.type(screen.getByRole('searchbox', { name: 'Search products' }), 'wig{Enter}')
-    expect(screen.getByTestId('path')).toHaveTextContent('/search?q=wig')
+    expect(await screen.findByText(/Free delivery over ৳ 3,000/)).toBeInTheDocument()
   })
 
-  it('shows the shopper’s first name once a stored session is restored', async () => {
+  it('opens the phone menu with the shop links and sign-in', async () => {
+    shopApi()
+    renderShell()
+    await userEvent.click(screen.getByRole('button', { name: 'Menu' }))
+    const menu = screen.getByRole('dialog', { name: 'Menu' })
+    expect(await within(menu).findByRole('link', { name: 'Bags' })).toBeInTheDocument()
+    expect(within(menu).getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/sign-in')
+    await userEvent.click(within(menu).getByRole('button', { name: 'Close menu' }))
+    expect(screen.queryByRole('dialog', { name: 'Menu' })).not.toBeInTheDocument()
+  })
+
+  it('links the account icon to the account once signed in', async () => {
     storeSession()
     mockApi({
       'GET /api/categories': () => envelope(200, categories),
+      'GET /api/checkout/delivery-options': () => envelope(200, deliveryOptions),
       'POST /api/auth/refresh-token': () => envelope(200, tokens),
+      'GET /api/cart': () => envelope(200, { items: [], itemCount: 0, subtotal: 0 }),
+      'GET /api/wishlist/ids': () => envelope(200, []),
     })
     renderShell()
-    expect(await screen.findByRole('link', { name: 'Nayeem' })).toHaveAttribute('href', '/account')
-  })
-
-  it('offers sign-in to a guest', async () => {
-    mockApi({ 'GET /api/categories': () => envelope(200, categories) })
-    renderShell()
-    expect(within(screen.getByRole('banner')).getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/sign-in')
+    expect(await screen.findByRole('link', { name: 'Account' })).toHaveAttribute('href', '/account')
   })
 })

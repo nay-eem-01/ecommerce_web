@@ -1,29 +1,35 @@
 import { Link } from 'react-router-dom'
 import { useCategories } from '../api/catalog'
 
+/** Phone: the wordmark, Shop and Help, and the fine print. Desktop adds an Account column. */
 export function Footer() {
   const categories = useCategories()
+  const shop = (categories.data ?? []).filter((c) => !c.comingSoon)
   return (
-    <footer className="ftr">
-      <div className="wrap ftr-in">
+    <footer className="ftr" style={{ marginTop: 'auto' }}>
+      <div className="page" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 24, padding: 0, width: '100%' }}>
         <div>
-          <Link className="mark" to="/">
+          <Link className="mark" to="/" style={{ fontSize: 22 }}>
             senpai<span>.</span>supply
           </Link>
-          <p className="fine">Anime figures, cosplay, bottles and bags, delivered across Bangladesh. Cash on delivery.</p>
+          <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 12, maxWidth: '30ch' }}>
+            Original characters, designed in Dhaka. Prices include VAT.
+          </p>
         </div>
         <div>
-          <h3>Shop</h3>
+          <h4>Shop</h4>
           <ul>
-            {(categories.data ?? []).map((c) => (
+            {shop.map((c) => (
               <li key={c.slug}>
                 <Link to={`/shop/${c.slug}`}>{c.name}</Link>
               </li>
             ))}
+            <li><Link to="/sets">Sets</Link></li>
+            <li><Link to="/characters">Characters</Link></li>
           </ul>
         </div>
         <div>
-          <h3>Help</h3>
+          <h4>Help</h4>
           <ul>
             <li><Link to="/help#delivery">Delivery charges</Link></li>
             <li><Link to="/help#cod">Cash on delivery</Link></li>
@@ -31,8 +37,8 @@ export function Footer() {
             <li><Link to="/track">Track an order</Link></li>
           </ul>
         </div>
-        <div>
-          <h3>Account</h3>
+        <div className="d-only">
+          <h4>Account</h4>
           <ul>
             <li><Link to="/sign-in">Sign in</Link></li>
             <li><Link to="/account/orders">My orders</Link></li>

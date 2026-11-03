@@ -39,7 +39,7 @@ export function OrderCard({ order: o }: { order: OrderSummary }) {
         {o.items.map((item) => (
           <div className="mini" key={`${item.productId}-${item.optionId}`}>
             <Link className="slot" to={`/p/${item.slug}`} aria-label={item.name}>
-              <ProductImage slug={item.slug} url={item.thumbnailUrl} width={112} />
+              <ProductImage slug={item.slug} url={item.thumbnailUrl} />
             </Link>
             <div style={{ minWidth: 0 }}>
               <Link to={`/p/${item.slug}`} style={{ textDecoration: 'none' }}>

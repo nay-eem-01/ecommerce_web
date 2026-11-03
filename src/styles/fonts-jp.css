@@ -1,7 +1,8 @@
 /*
  * Dela Gothic One, only the Japanese slices holding the glyphs the storefront prints in display type:
- * category signs 像 衣 水 鞄 and the 新入荷 sign. A label outside these falls back to the system's Japanese font.
- * Latin comes from @fontsource/dela-gothic-one/latin-400.css (src/fonts.ts).
+ * 新 学 期 狐 猫 侍 雨 あ り が と う お か え 水 鞄 衣
+ * A label outside these falls back to the system's Japanese font. Latin comes from
+ * @fontsource/dela-gothic-one/latin-400.css (src/fonts.ts).
  */
 @font-face {
   font-family: 'Dela Gothic One';
@@ -10,6 +11,38 @@
   font-weight: 400;
   src: url(../assets/fonts/dela-gothic-one-69-400-normal.woff2) format('woff2');
   unicode-range: U+2003,U+2312,U+266c,U+4f86,U+51ea,U+5243,U+5256,U+541f,U+5841,U+59dc,U+5df3,U+601c,U+60e7,U+632b,U+638c,U+64ad,U+6881,U+697c,U+69cd,U+6c50,U+6d2a,U+6fc1,U+7027,U+7058,U+70f9,U+714e,U+7345,U+751a,U+760d,U+764c,U+77db,U+7d79,U+7e8f,U+80ce,U+814e,U+81fc,U+8247,U+8278,U+85a9,U+8a03,U+90ed,U+9784,U+9801,U+984e,U+99b3,U+9bc9,U+9bdb,U+9be8,U+9e78,U+ff6b;
+}
+@font-face {
+  font-family: 'Dela Gothic One';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(../assets/fonts/dela-gothic-one-71-400-normal.woff2) format('woff2');
+  unicode-range: U+af,U+2465,U+2517,U+33a1,U+4f10,U+50c5,U+51b4,U+5384,U+5606,U+5bb0,U+5cac,U+5ee3,U+618e,U+61f2,U+62c9,U+66ab,U+66f9,U+6816,U+6960,U+6b3e,U+6f20,U+7078,U+72d0,U+73ed,U+7ad9,U+7b1b,U+7be4,U+7d62,U+7f51,U+80b4,U+80f4,U+8154,U+85fb,U+865c,U+8702,U+895f,U+8aed,U+8b90,U+8ced,U+8fbf,U+91d8,U+9418,U+9583,U+9591,U+9813,U+982c,U+9bd6,U+ff46,U+ff7f,U+ff88;
+}
+@font-face {
+  font-family: 'Dela Gothic One';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(../assets/fonts/dela-gothic-one-74-400-normal.woff2) format('woff2');
+  unicode-range: U+2002,U+2025,U+4f8d,U+51e1,U+51f8,U+5507,U+5598,U+58f1,U+5983,U+59ac,U+5c3c,U+5de7,U+5e7d,U+5eca,U+5f61,U+606d,U+60f9,U+636e,U+64ec,U+67da,U+67ff,U+6813,U+68f2,U+693f,U+6b6a,U+6bbb,U+6ef4,U+7092,U+717d,U+7261,U+73c8,U+7432,U+7483,U+76fe,U+7709,U+78d0,U+81a3,U+81b3,U+82af,U+8305,U+8309,U+8870,U+88fe,U+8cd1,U+8d66,U+906e,U+971e,U+9812,U+ff79,U+ff90;
+}
+@font-face {
+  font-family: 'Dela Gothic One';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(../assets/fonts/dela-gothic-one-97-400-normal.woff2) format('woff2');
+  unicode-range: U+7e,U+b4,U+25c6,U+2661,U+4e92,U+4eee,U+4ffa,U+5144,U+5237,U+5287,U+52b4,U+58c1,U+5bff,U+5c04,U+5c06,U+5e95,U+5f31,U+5f93,U+63c3,U+640d,U+6557,U+6614,U+662f,U+67d3,U+690d,U+6bba,U+6e6f,U+72af,U+732b,U+7518,U+7ae0,U+7ae5,U+7af6,U+822a,U+89e6,U+8a3a,U+8a98,U+8cb8,U+8de1,U+8e8d,U+95d8,U+961c,U+96a3,U+96ea,U+9bae,U+ff20,U+ff22,U+ff29,U+ff2b-ff2c;
+}
+@font-face {
+  font-family: 'Dela Gothic One';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(../assets/fonts/dela-gothic-one-98-400-normal.woff2) format('woff2');
+  unicode-range: U+25cb,U+4e71,U+4f59,U+50d5,U+520a,U+5217,U+5230,U+523a-523b,U+541b,U+5439,U+5747,U+59c9,U+5bdf,U+5c31,U+5de8,U+5e7c,U+5f69,U+6050,U+60d1,U+63cf,U+663c,U+67c4,U+6885,U+6c38,U+6d6e,U+6db2,U+6df7,U+6e2c,U+6f5f,U+7532,U+76e3-76e4,U+7701,U+793c,U+79f0,U+7a93,U+7d00,U+7de0,U+7e54,U+8328,U+8840,U+969c,U+96e8,U+9811,U+9aea,U+9b5a,U+ff24,U+ff2e,U+ff57;
 }
 @font-face {
   font-family: 'Dela Gothic One';
@@ -42,4 +75,12 @@
   font-weight: 400;
   src: url(../assets/fonts/dela-gothic-one-117-400-normal.woff2) format('woff2');
   unicode-range: U+4e,U+a0,U+3000,U+300c-300d,U+4e00,U+4e0a,U+4e2d,U+4e8b,U+4eba,U+4f1a,U+5165,U+5168,U+5185,U+51fa,U+5206,U+5229,U+524d,U+52d5,U+5408,U+554f,U+5831,U+5834,U+5927,U+5b9a,U+5e74,U+5f0f,U+60c5,U+65b0,U+65b9,U+6642,U+6700,U+672c,U+682a,U+6b63,U+6c17,U+7121,U+751f,U+7528,U+753b,U+76ee,U+793e,U+884c,U+898b,U+8a18,U+9593,U+95a2,U+ff01,U+ff08-ff09;
+}
+@font-face {
+  font-family: 'Dela Gothic One';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(../assets/fonts/dela-gothic-one-119-400-normal.woff2) format('woff2');
+  unicode-range: U+20,U+2027,U+3001-3002,U+3041-307f,U+3081-308f,U+3091-3093,U+3099-309a,U+309d-309e,U+30a1-30e1,U+30e3-30ed,U+30ef-30f0,U+30f2-30f4,U+30fb-30fe,U+ff0c,U+ff0e;
 }

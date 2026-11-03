@@ -169,7 +169,7 @@ async function send(path: string, options: RequestOptions, withToken = true): Pr
   if (withToken && accessToken) headers.Authorization = `Bearer ${accessToken}`
 
   try {
-    return await fetch(BASE_URL + path + queryString(options.params), {
+    return await fetch(BASE_URL + withQuery(path, options.params), {
       method: options.method ?? 'GET',
       headers,
       body,
@@ -179,6 +179,13 @@ async function send(path: string, options: RequestOptions, withToken = true): Pr
     if (error instanceof DOMException && error.name === 'AbortError') throw error
     throw new ApiError(0, NETWORK_ERROR_MESSAGE)
   }
+}
+
+/** Adds `params` to a path that may already carry a query (repeated values such as tag=…&tag=…). */
+export function withQuery(path: string, params?: Record<string, QueryValue>): string {
+  const qs = queryString(params)
+  if (!qs) return path
+  return path.includes('?') ? `${path}&${qs.slice(1)}` : path + qs
 }
 
 export function queryString(params?: Record<string, QueryValue>): string {

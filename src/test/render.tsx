@@ -3,6 +3,7 @@ import { render } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { SessionProvider } from '../features/auth/session'
+import { BagProvider } from '../features/cart/BagContext'
 import { CartProvider } from '../features/cart/CartProvider'
 import { createQueryClient } from '../queryClient'
 import { ToastProvider } from '../ui/Toast'
@@ -23,10 +24,12 @@ export function renderWithProviders(ui: ReactNode, path = '/') {
         <CartProvider>
         <MemoryRouter initialEntries={[path]}>
           <ToastProvider>
+            <BagProvider>
             {ui}
             <Routes>
               <Route path="*" element={<CurrentPath />} />
             </Routes>
+            </BagProvider>
           </ToastProvider>
         </MemoryRouter>
         </CartProvider>

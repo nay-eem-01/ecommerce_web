@@ -67,6 +67,33 @@ export interface Category {
   sortOrder: number
   active: boolean
   productCount: number
+  /** Announced, no products yet: the storefront offers early access. */
+  comingSoon: boolean
+}
+
+/** One of the shop's own characters; its products form a collection. */
+export interface Character {
+  id: number
+  slug: string
+  name: string
+  /** The sign on the collection tile (狐, 猫, 侍). */
+  label: string | null
+  blurb: string | null
+  sortOrder: number
+  active: boolean
+  productCount: number
+}
+
+/** A colour option as a card shows it (dots, quick add). */
+export interface Swatch {
+  optionId: number
+  value: string
+  swatch: string
+  stockState: StockState
+}
+
+export interface Facets {
+  groups: Array<{ name: string; values: Array<{ value: string; count: number }> }>
 }
 
 export interface ProductSummary {
@@ -85,6 +112,13 @@ export interface ProductSummary {
   deposit: number | null
   hasOptions: boolean
   thumbnailUrl: string | null
+  characterSlug: string | null
+  /** Listed in the last 30 days. */
+  newArrival: boolean
+  /** Colour options only; empty when the options are not colours. */
+  swatches: Swatch[]
+  /** A set of other products. */
+  set: boolean
 }
 
 export interface ProductOption {
@@ -132,6 +166,13 @@ export interface ProductDetail {
   spinFrames: string[]
   storyImage: Media | null
   status: string
+  character: { slug: string; name: string; label: string | null } | null
+  tags: Array<{ group: string; value: string }>
+  newArrival: boolean
+  /** For a set: the products it holds. */
+  bundleItems: ProductSummary[]
+  /** Sets containing this product, with what the set saves ("Complete the set"). */
+  sets: Array<{ set: ProductSummary; saving: number | null }>
 }
 
 export interface Review {

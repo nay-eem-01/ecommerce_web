@@ -10,13 +10,13 @@ export function HelpPage() {
   const delivery = useDeliveryOptions()
   const d = delivery.data
   return (
-    <div className="wrap" style={{ paddingBottom: 48 }}>
-      <nav className="crumbs" aria-label="Breadcrumb">
+    <div className="page" style={{ paddingBottom: 48 }}>
+      <nav className="meta crumbs" aria-label="Breadcrumb">
         <Link to="/">Home</Link>
         <span aria-hidden="true">/</span>
         <span>Help</span>
       </nav>
-      <h1 className="page-title">Help</h1>
+      <h1 className="display page-h1">Help</h1>
       <section className="pd-sec" id="delivery" aria-labelledby="delivery-h">
         <h2 id="delivery-h">Delivery charges</h2>
         <div className="prose">

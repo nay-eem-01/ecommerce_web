@@ -1,6 +1,7 @@
 import { Suspense, useEffect } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { BagDrawer } from '../features/cart/Bag'
+import { Icon } from '../ui/icons'
 import { Footer } from './Footer'
 import { Header } from './Header'
 import { HighlightProvider } from './highlight'
@@ -25,14 +26,15 @@ function ScrollOnNavigate() {
 export function AppLayout() {
   const { pathname } = useLocation()
   const focused = pathname === '/checkout'
-  const done = pathname === '/checkout/done'
+  // Phone sign-in and order-placed pages carry only the wordmark (sign-in adds a close button), as in the design.
+  const minimal = pathname === '/checkout/done' ? 'done' : pathname === '/sign-in' ? 'sign-in' : null
   return (
     <HighlightProvider>
       <div className="app">
         <a className="skip" href="#main">
           Skip to content
         </a>
-        {!focused && (done ? <DoneHeader /> : <Header />)}
+        {!focused && (minimal ? <MinimalHeader kind={minimal} /> : <Header />)}
         <main id="main" tabIndex={-1}>
           <Suspense fallback={<PageLoading />}>
             <Outlet />
@@ -46,17 +48,29 @@ export function AppLayout() {
   )
 }
 
-function DoneHeader() {
+function MinimalHeader({ kind }: { kind: 'done' | 'sign-in' }) {
   return (
     <>
       <div className="d-only">
         <Header />
       </div>
-      <header className="ph-only done-hdr">
-        <Link className="mark" to="/">
-          senpai<span>.</span>supply
-        </Link>
-      </header>
+      {kind === 'done' ? (
+        <header className="ph-only done-hdr">
+          <Link className="mark" to="/">
+            senpai<span>.</span>supply
+          </Link>
+        </header>
+      ) : (
+        <header className="ph-only phone-hdr">
+          <Link className="ibtn" to="/" aria-label="Close">
+            <Icon name="close" />
+          </Link>
+          <Link className="mark" to="/">
+            senpai<span>.</span>supply
+          </Link>
+          <span />
+        </header>
+      )}
     </>
   )
 }

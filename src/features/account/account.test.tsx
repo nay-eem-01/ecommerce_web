@@ -7,7 +7,10 @@ import { renderWithProviders, storeSession } from '../../test/render'
 import { RequireAuth } from '../auth/RequireAuth'
 import { SignInPage, safeBack } from '../auth/SignInPage'
 import { AccountLayout } from './AccountLayout'
-import { AddressesPage, OrdersPage, OverviewPage, WishlistPage } from './AccountPages'
+import { AddressesPage, DetailsPage, OrdersPage, WishlistPage } from './AccountPages'
+import { CodeBoxes } from '../auth/CodeBoxes'
+import { useState } from 'react'
+import type { OrderSummary } from '../../api/types'
 
 const emptyPage = { content: [], pageNo: 0, pageSize: 20, totalElements: 0, totalPages: 0, last: true }
 
@@ -16,8 +19,8 @@ const routes = (
     <Route path="/sign-in" element={<SignInPage />} />
     <Route element={<RequireAuth />}>
       <Route element={<AccountLayout />}>
-        <Route path="/account" element={<OverviewPage />} />
-        <Route path="/account/orders" element={<OrdersPage />} />
+        <Route path="/account" element={<OrdersPage />} />
+        <Route path="/account/details" element={<DetailsPage />} />
         <Route path="/account/wishlist" element={<WishlistPage />} />
         <Route path="/account/addresses" element={<AddressesPage />} />
       </Route>
@@ -54,7 +57,7 @@ describe('sign in', () => {
       'PUT /api/wishlist/9': () => envelope(200, null),
       'GET /api/orders/me': () => envelope(200, emptyPage),
     })
-    renderWithProviders(routes, '/sign-in?back=/account/orders')
+    renderWithProviders(routes, '/sign-in?back=/account/wishlist')
     await userEvent.type(screen.getByLabelText('Mobile number'), '0171234567')
     await userEvent.click(screen.getByRole('button', { name: 'Send code' }))
     expect(screen.getByText('Use an 11-digit number starting with 01.')).toBeInTheDocument()
@@ -62,8 +65,8 @@ describe('sign in', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Send code' }))
     expect(await screen.findByText('+88 01712345678')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Send a new code in \d+ s/ })).toBeDisabled()
-    await userEvent.type(screen.getByLabelText('6-digit code'), '123456')
-    await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent('/account/orders'))
+    await userEvent.type(screen.getByLabelText('Digit 1'), '123456')
+    await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent('/account/wishlist'))
     const verify = fetchMock.mock.calls.find(([u]) => String(u).endsWith('/otp/verify'))
     expect(bodyOf(verify?.[1])).toMatchObject({ phone: '01712345678', code: '123456' })
     const merge = fetchMock.mock.calls.find(([u]) => String(u).endsWith('/api/cart/merge'))
@@ -80,9 +83,10 @@ describe('sign in', () => {
     renderWithProviders(routes, '/sign-in')
     await userEvent.type(screen.getByLabelText('Mobile number'), '01712345678')
     await userEvent.click(screen.getByRole('button', { name: 'Send code' }))
-    await userEvent.type(await screen.findByLabelText('6-digit code'), '000000')
+    await userEvent.type(await screen.findByLabelText('Digit 1'), '000000')
     expect(await screen.findByText('That code is not right. 4 tries left.')).toBeInTheDocument()
-    expect(screen.getByLabelText('6-digit code')).toHaveValue('')
+    expect(screen.getByLabelText('Digit 1')).toHaveValue('')
+    expect(screen.getByLabelText('Digit 6')).toHaveValue('')
     expect(screen.getByRole('button', { name: 'Send a new code' })).toBeEnabled()
   })
 
@@ -100,16 +104,52 @@ describe('account', () => {
     expect(await screen.findByTestId('path')).toHaveTextContent('/sign-in?back=%2Faccount%2Fwishlist')
   })
 
-  it('shows the overview with counts and an empty order history', async () => {
+  it('opens on the orders with the profile, counts and an empty history', async () => {
     storeSession()
     mockApi({ ...memberRoutes, 'GET /api/orders/me': () => envelope(200, emptyPage) })
     renderWithProviders(routes, '/account')
-    expect(await screen.findByRole('heading', { name: 'Nayeem Ahmed' })).toBeInTheDocument()
+    expect(await screen.findByText('Nayeem Ahmed')).toBeInTheDocument()
     expect(screen.getByText('+88 01712345678')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'My orders' })).toBeInTheDocument()
     expect(await screen.findByRole('heading', { name: 'No orders yet' })).toBeInTheDocument()
     const nav = await screen.findByRole('navigation', { name: 'Account' })
     await waitFor(() => expect(nav.querySelector('a[href="/account/wishlist"]')).toHaveTextContent('Wishlist1'))
     expect(nav.querySelector('a[href="/account"]')).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('shows an open order with its progress and a delivered one with buy again and review', async () => {
+    storeSession()
+    const item = { productId: 7, optionId: null, slug: 'sakura-bottle', name: 'Sakura steel bottle, 750 ml', optionLabel: null, unitPrice: 1450, quantity: 1, lineTotal: 1450, preorder: false, depositPerUnit: null, thumbnailUrl: null }
+    const open: OrderSummary = { orderNumber: 'SS-OPEN0001', status: 'SHIPPED', placedAt: '2026-11-03T08:00:00Z', total: 1520, paymentMethod: 'COD', itemCount: 1, items: [item] }
+    const done: OrderSummary = { ...open, orderNumber: 'SS-DONE0001', status: 'DELIVERED', paymentMethod: 'BKASH' }
+    mockApi({ ...memberRoutes, 'GET /api/orders/me': () => envelope(200, { ...emptyPage, content: [open, done], totalElements: 2 }) })
+    renderWithProviders(routes, '/account')
+    const openCard = await screen.findByRole('article', { name: 'Order SS-OPEN0001, With rider' })
+    expect(openCard).toHaveTextContent('On the way')
+    expect(openCard.querySelector('.bar4 .now')).toHaveTextContent('With rider')
+    expect(openCard).toHaveTextContent('Have ready')
+    const doneCard = screen.getByRole('article', { name: 'Order SS-DONE0001, Delivered' })
+    expect(doneCard.querySelector('a[href="/p/sakura-bottle#reviews"]')).toHaveTextContent('Write a review')
+    await userEvent.click(screen.getByRole('button', { name: 'Buy again' }))
+    await waitFor(() => expect(JSON.parse(localStorage.getItem('senpai.cart') ?? 'null') ?? []).toBeDefined())
+  })
+
+  it('saves your name and email on the details page', async () => {
+    storeSession()
+    const fetchMock = mockApi({
+      ...memberRoutes,
+      'GET /api/orders/me': () => envelope(200, emptyPage),
+      'PUT /api/users/me': (_u, init) => envelope(200, { ...tokens.user, ...(bodyOf(init) as object) }),
+    })
+    renderWithProviders(routes, '/account/details')
+    const name = await screen.findByLabelText('Your name')
+    await userEvent.clear(name)
+    await userEvent.type(name, 'Nayeem A.')
+    await userEvent.type(screen.getByLabelText(/Email for receipts/), 'n@example.com')
+    await userEvent.click(screen.getByRole('button', { name: 'Save details' }))
+    expect(await screen.findByText('Details saved')).toBeInTheDocument()
+    expect(bodyOf(fetchMock.mock.calls.find(([u, i]) => String(u).endsWith('/api/users/me') && i?.method === 'PUT')?.[1])).toEqual({ name: 'Nayeem A.', email: 'n@example.com' })
+    expect(screen.getByText('+88 01712345678 · used to sign in')).toBeInTheDocument()
   })
 
   it('lists saved products in the wishlist', async () => {
@@ -135,12 +175,40 @@ describe('account', () => {
       },
     })
     renderWithProviders(routes, '/account/addresses')
-    await userEvent.click(await screen.findByRole('button', { name: 'Add an address' }))
+    await userEvent.click(await screen.findByRole('button', { name: '+ Add an address' }))
     await userEvent.click(screen.getByRole('button', { name: 'Save address' }))
     expect(screen.getByRole('alert')).toHaveTextContent('Enter your area or thana.')
     await userEvent.type(screen.getByLabelText('Area or thana'), 'Mirpur')
     await userEvent.type(screen.getByLabelText('House, road and flat'), 'House 9, Road 1')
     await userEvent.click(screen.getByRole('button', { name: 'Save address' }))
     expect(await screen.findByText('Default')).toBeInTheDocument()
+  })
+})
+
+describe('code boxes', () => {
+  function Harness() {
+    const [v, setV] = useState('')
+    return (
+      <>
+        <CodeBoxes value={v} onChange={setV} />
+        <output data-testid="code">{v}</output>
+      </>
+    )
+  }
+
+  it('moves forward as you type, back on Backspace, and fills every box from a paste', async () => {
+    renderWithProviders(<Harness />)
+    await userEvent.click(screen.getByLabelText('Digit 1'))
+    await userEvent.keyboard('48')
+    expect(screen.getByTestId('code')).toHaveTextContent('48')
+    expect(screen.getByLabelText('Digit 3')).toHaveFocus()
+    await userEvent.keyboard('{Backspace}')
+    expect(screen.getByTestId('code')).toHaveTextContent(/^4$/)
+    expect(screen.getByLabelText('Digit 2')).toHaveFocus()
+    await userEvent.click(screen.getByLabelText('Digit 5'))
+    expect(screen.getByLabelText('Digit 2')).toHaveFocus()
+    await userEvent.paste('82-1 93')
+    expect(screen.getByTestId('code')).toHaveTextContent('482193')
+    expect(screen.getByLabelText('Digit 6')).toHaveValue('3')
   })
 })

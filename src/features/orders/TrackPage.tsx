@@ -9,7 +9,7 @@ import { tk } from '../../lib/money'
 import { METHOD_NAMES } from '../../lib/payments'
 import { localDigits, phoneError } from '../../lib/phone'
 import { useTitle } from '../../lib/useTitle'
-import { Icon } from '../../ui/Icon'
+import { Icon } from '../../ui/icons'
 import { lastOrder } from '../checkout/lastOrder'
 import { OrderTimeline, STATUS_LABEL } from './OrderTimeline'
 
@@ -33,10 +33,10 @@ export function TrackPage() {
   }
 
   return (
-    <div className="wrap">
+    <div className="page">
       <div className="auth" style={{ maxWidth: track.data ? 720 : 460 }}>
         <div style={{ display: 'grid', gap: 8 }}>
-          <h1 className="page-title" style={{ padding: 0 }}>
+          <h1 className="display page-h1" style={{ padding: 0 }}>
             Track an order
           </h1>
           <p className="muted">Use the order number from your confirmation and the mobile number you ordered with.</p>
@@ -59,13 +59,13 @@ export function TrackPage() {
               {error || errorMessage(track.error)}
             </p>
           )}
-          <button className="btn lg block" type="submit" disabled={track.isPending}>
+          <button className="btn block" type="submit" disabled={track.isPending}>
             {track.isPending ? 'Looking it up…' : 'Track order'}
           </button>
         </form>
         {track.data && <TrackingResult tracking={track.data} />}
         <p className="muted" style={{ fontSize: 14 }}>
-          Signed in? Your orders are under <Link className="link" to="/account/orders">My orders</Link>.
+          Signed in? Your orders are under <Link className="link" to="/account">My orders</Link>.
         </p>
       </div>
     </div>
@@ -81,7 +81,7 @@ function TrackingResult({ tracking: t }: { tracking: Tracking }) {
         <span className="meta">
           {tk(t.total)}, {METHOD_NAMES[t.paymentMethod]}
         </span>
-        <span className={`pill ${t.status === 'DELIVERED' ? 'ok' : t.status === 'CANCELLED' ? 'warn' : 'pre'}`}>{STATUS_LABEL[t.status]}</span>
+        <span className={`tag ${t.status === 'DELIVERED' ? 'ok' : t.status === 'CANCELLED' ? 'warn' : 'pre'}`}>{STATUS_LABEL[t.status]}</span>
       </div>
       <ul style={{ margin: 0, paddingLeft: 20, color: 'var(--text-2)' }}>
         {t.items.map((item, i) => (

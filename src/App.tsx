@@ -1,5 +1,5 @@
 import { lazy, type ComponentType } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { RequireAuth } from './features/auth/RequireAuth'
 import { CartPage } from './features/cart/Bag'
 import { CharactersPage } from './features/catalog/CharactersPage'
@@ -22,7 +22,7 @@ const OrderPage = page(() => import('./features/orders/OrderPage'), 'OrderPage')
 const HelpPage = page(() => import('./features/site/HelpPage'), 'HelpPage')
 const SignInPage = page(() => import('./features/auth/SignInPage'), 'SignInPage')
 const AccountLayout = page(() => import('./features/account/AccountLayout'), 'AccountLayout')
-const OverviewPage = page(() => import('./features/account/AccountPages'), 'OverviewPage')
+const DetailsPage = page(() => import('./features/account/AccountPages'), 'DetailsPage')
 const OrdersPage = page(() => import('./features/account/AccountPages'), 'OrdersPage')
 const WishlistPage = page(() => import('./features/account/AccountPages'), 'WishlistPage')
 const AddressesPage = page(() => import('./features/account/AccountPages'), 'AddressesPage')
@@ -51,8 +51,9 @@ export default function App() {
         <Route path="/sign-in" element={<SignInPage />} />
         <Route element={<RequireAuth />}>
           <Route element={<AccountLayout />}>
-            <Route path="/account" element={<OverviewPage />} />
-            <Route path="/account/orders" element={<OrdersPage />} />
+            <Route path="/account" element={<OrdersPage />} />
+            <Route path="/account/orders" element={<Navigate to="/account" replace />} />
+            <Route path="/account/details" element={<DetailsPage />} />
             <Route path="/account/wishlist" element={<WishlistPage />} />
             <Route path="/account/addresses" element={<AddressesPage />} />
           </Route>

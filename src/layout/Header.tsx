@@ -20,8 +20,9 @@ export function Header() {
   const delivery = useDeliveryOptions()
   const highlighted = useHighlightedCategory()
   const { pathname } = useLocation()
-  // Phone product pages swap the menu for a back arrow and drop the menu row, as in the design.
-  const onProduct = pathname.startsWith('/p/')
+  // Phone product and account pages swap the menu for a back arrow and drop the menu row, as in the design.
+  const onAccount = pathname.startsWith('/account')
+  const onProduct = pathname.startsWith('/p/') || onAccount
   const bag = useBag()
   const { count } = useCart()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -43,7 +44,7 @@ export function Header() {
           <div className="hdr-row ph-only">
             <div className="hdr-left">
               {onProduct ? (
-                <Link className="ibtn" to={highlighted ? `/shop/${highlighted}` : '/shop'} aria-label="Back to the shop">
+                <Link className="ibtn" to={onAccount ? '/' : highlighted ? `/shop/${highlighted}` : '/shop'} aria-label={onAccount ? 'Home' : 'Back to the shop'}>
                   <Icon name="back" />
                 </Link>
               ) : (

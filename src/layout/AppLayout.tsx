@@ -1,5 +1,6 @@
 import { Suspense, useEffect } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
+import { BagDrawer } from '../features/cart/Bag'
 import { Footer } from './Footer'
 import { Header } from './Header'
 import { HighlightProvider } from './highlight'
@@ -17,23 +18,46 @@ function ScrollOnNavigate() {
   return null
 }
 
+/**
+ * The shop's frame. Checkout is focused (its own header, no footer); the order-placed page shows only the wordmark
+ * on phone, as in the design. The bag drawer opens over any page.
+ */
 export function AppLayout() {
+  const { pathname } = useLocation()
+  const focused = pathname === '/checkout'
+  const done = pathname === '/checkout/done'
   return (
     <HighlightProvider>
       <div className="app">
         <a className="skip" href="#main">
           Skip to content
         </a>
-        <Header />
+        {!focused && (done ? <DoneHeader /> : <Header />)}
         <main id="main" tabIndex={-1}>
           <Suspense fallback={<PageLoading />}>
             <Outlet />
           </Suspense>
         </main>
-        <Footer />
+        {!focused && <Footer />}
+        <BagDrawer />
       </div>
       <ScrollOnNavigate />
     </HighlightProvider>
+  )
+}
+
+function DoneHeader() {
+  return (
+    <>
+      <div className="d-only">
+        <Header />
+      </div>
+      <header className="ph-only done-hdr">
+        <Link className="mark" to="/">
+          senpai<span>.</span>supply
+        </Link>
+      </header>
+    </>
   )
 }
 

@@ -20,6 +20,8 @@ export function Header() {
   const delivery = useDeliveryOptions()
   const highlighted = useHighlightedCategory()
   const { pathname } = useLocation()
+  // Phone product pages swap the menu for a back arrow and drop the menu row, as in the design.
+  const onProduct = pathname.startsWith('/p/')
   const bag = useBag()
   const { count } = useCart()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -40,9 +42,15 @@ export function Header() {
         <div className="hdr-wrap">
           <div className="hdr-row ph-only">
             <div className="hdr-left">
-              <button className="ibtn" aria-label="Menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}>
-                <Icon name="menu" />
-              </button>
+              {onProduct ? (
+                <Link className="ibtn" to={highlighted ? `/shop/${highlighted}` : '/shop'} aria-label="Back to the shop">
+                  <Icon name="back" />
+                </Link>
+              ) : (
+                <button className="ibtn" aria-label="Menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}>
+                  <Icon name="menu" />
+                </button>
+              )}
             </div>
             <Link className="mark" to="/">
               senpai<span>.</span>supply
@@ -82,14 +90,14 @@ export function Header() {
               <BagButton count={count} onOpen={bag.open} />
             </div>
           </div>
-          <nav className="nav ph-only" aria-label="Shop">
+          {!onProduct && <nav className="nav ph-only" aria-label="Shop">
             {items.map((item) => (
               <NavLink key={item.to} to={item.to} className={item.soon ? 'soon' : isOn(item.to)}>
                 {item.label}
                 {item.soon && <i>soon</i>}
               </NavLink>
             ))}
-          </nav>
+          </nav>}
         </div>
       </header>
       {menuOpen && <PhoneMenu items={items} accountTo={accountTo} signedIn={status === 'signed-in'} onClose={() => setMenuOpen(false)} />}

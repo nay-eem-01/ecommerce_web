@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { errorMessage } from '../../api/errors'
 import { useCreateReview, useDeleteReview, useReviews } from '../../api/products'
 import { shortDate } from '../../lib/dates'
-import { Icon } from '../../ui/Icon'
+import { Icon } from '../../ui/icons'
 import { Stars } from '../../ui/Stars'
 import { useToast } from '../../ui/Toast'
 import { useSession } from '../auth/session'
@@ -85,7 +85,7 @@ export function Reviews({ slug }: { slug: string }) {
         </button>
       )}
       {status !== 'signed-in' ? (
-        <Link className="btn alt" style={{ marginTop: 16 }} to={`/sign-in?back=${encodeURIComponent(`/p/${slug}#sec-reviews`)}`}>
+        <Link className="btn alt" style={{ marginTop: 16 }} to={`/sign-in?back=${encodeURIComponent(`/p/${slug}#reviews`)}`}>
           Sign in to write a review
         </Link>
       ) : writing ? (

@@ -1,6 +1,6 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { CartBadge } from '../../layout/CartBadge'
+import { BagDrawer } from '../cart/Bag'
 import { mockApi } from '../../test/api'
 import { summary } from '../../test/fixtures'
 import { renderWithProviders } from '../../test/render'
@@ -35,7 +35,7 @@ describe('product card', () => {
     mockApi({})
     renderWithProviders(
       <>
-        <CartBadge />
+        <BagDrawer />
         <ProductCard product={summary({ hasOptions: true, swatches })} />
       </>,
     )
@@ -43,6 +43,7 @@ describe('product card', () => {
     await userEvent.click(colours.getByRole('button', { name: 'Night navy' }))
     await userEvent.click(screen.getByRole('button', { name: 'Add to bag' }))
     expect(JSON.parse(localStorage.getItem('senpai.cart') ?? '[]')).toEqual([{ productId: 7, optionId: 12, quantity: 1 }])
+    expect(await screen.findByRole('dialog', { name: /Your bag/ })).toHaveTextContent('1 item')
   })
 
   it('has no quick add when the choice is not a colour, or when sold out', () => {

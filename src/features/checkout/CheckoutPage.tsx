@@ -12,19 +12,20 @@ import { METHOD_NAMES } from '../../lib/payments'
 import { localDigits } from '../../lib/phone'
 import { useTitle } from '../../lib/useTitle'
 import { PageLoading } from '../../layout/AppLayout'
-import { Icon } from '../../ui/Icon'
+import { Icon } from '../../ui/icons'
 import { useSession } from '../auth/session'
 import { useCart } from '../cart/CartProvider'
-import { CartPage } from '../cart/CartPage'
+import { useBag } from '../cart/BagContext'
+import { CartPage } from '../cart/Bag'
 import { ProductImage } from '../catalog/ProductImage'
 import { rememberOrder } from './lastOrder'
 import { LABELS, validate, type FieldId } from './validate'
 
 const PAY_COPY: Record<PaymentMethod, string> = {
-  COD: 'Pay the rider. You can check the item first.',
-  BKASH: 'You approve the payment on bKash’s page next.',
-  NAGAD: 'You approve the payment on Nagad’s page next.',
-  CARD: 'Visa, Mastercard or Amex, on a secure payment page.',
+  COD: 'Pay the rider when it arrives',
+  BKASH: 'Approve on bKash’s page next',
+  NAGAD: 'Approve on Nagad’s page next',
+  CARD: 'Visa, Mastercard, Amex',
 }
 
 interface Form {
@@ -46,7 +47,13 @@ export function CheckoutPage() {
   const { status } = useSession()
   const addresses = useAddresses(status === 'signed-in')
   if (!cart.ready || status === 'restoring' || (status === 'signed-in' && addresses.isPending)) return <PageLoading />
-  if (!cart.lines.length) return <CartPage />
+  if (!cart.lines.length)
+    return (
+      <>
+        <CheckoutHeader />
+        <CartPage />
+      </>
+    )
   return <Checkout />
 }
 
@@ -77,6 +84,7 @@ function Checkout() {
   const [placing, setPlacing] = useState(false)
   const [promo, setPromo] = useState('')
   const [promoMsg, setPromoMsg] = useState('')
+  const [summaryOpen, setSummaryOpen] = useState(false)
   // One key per checkout attempt; a retry after a network error reuses it, so the order is never placed twice.
   const idempotencyKey = useRef(crypto.randomUUID())
   const problemBox = useRef<HTMLDivElement>(null)
@@ -158,21 +166,29 @@ function Checkout() {
 
   const preorderLines = q?.lines.filter((l) => l.preorder) ?? []
   const total = q?.total
+  const inside = delivery.data?.insideDistricts ?? ['Dhaka']
+  const outsideList = (delivery.data?.districts ?? []).filter((d) => !inside.includes(d))
+  const isInside = inside.includes(form.district)
+  const itemCount = q?.lines.reduce((n, l) => n + l.quantity, 0) ?? cart.count
+  const payNote = method === 'COD' ? 'Nothing is charged now. You pay when it arrives.' : 'You confirm the payment on the next screen.'
+  const placeLabel = placing ? 'Placing your order…' : total != null ? `Place order · ${tk(total)}` : 'Place order'
+  const canPlace = !placing && !!q && q.allInStock
+
   const field = (id: FieldId, label: string, input: ReactNode, opts: { full?: boolean; optional?: boolean; help?: string } = {}) => (
-    <div className={opts.full ? 'field full' : 'field'}>
+    <div className="field" style={opts.full ? { gridColumn: '1 / -1' } : undefined}>
       <label htmlFor={`co-${id}`}>
         {label}
-        {opts.optional && <span className="opt-l"> (optional)</span>}
+        {opts.optional && <span style={{ fontWeight: 400, color: 'var(--muted)' }}> (optional)</span>}
       </label>
       {input}
       <div id={`co-${id}-msg`} aria-live="polite">
         {errors[id] ? (
-          <span className="err">
-            <Icon name="alert" />
+          <span className="co-err">
+            <Icon name="alert" small />
             {errors[id]}
           </span>
-        ) : id === 'phone' && form.phone && tried ? (
-          <span className="okmsg">Looks good</span>
+        ) : id === 'phone' && form.phone && !validate('phone', form.phone) ? (
+          <span className="help" style={{ color: 'var(--ok)' }}>Looks good. The rider calls this number before arriving.</span>
         ) : opts.help ? (
           <span className="help">{opts.help}</span>
         ) : null}
@@ -188,214 +204,310 @@ function Checkout() {
     onBlur: () => blur(id),
   })
 
-  return (
-    <div className="wrap">
-      <nav className="crumbs" aria-label="Breadcrumb">
-        <Link to="/cart">Cart</Link>
-        <span aria-hidden="true">/</span>
-        <span>Checkout</span>
-      </nav>
-      <h1 className="page-title">Checkout</h1>
-      <form className="co-layout" onSubmit={submit} noValidate>
-        <div className="co-steps">
-          {member ? (
-            <p className="muted">
-              Signed in as <strong style={{ color: 'var(--text)' }}>{user?.name || user?.phone}</strong>.
-              {saved ? ' We filled in your saved address.' : ' We save this address for next time.'}
+  const summaryLines = (
+    <>
+      {(q?.lines ?? []).map((l) => (
+        <div className="line co-mini" key={`${l.productId}-${l.optionId}`}>
+          <div className="thumb">
+            <div className="art">
+              <ProductImage slug={l.slug} url={l.thumbnailUrl} />
+            </div>
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ fontSize: 13, fontWeight: 700 }}>{l.name}</p>
+            <p style={{ fontSize: 12, color: 'var(--muted)' }}>
+              {[l.optionLabel?.replace(/^[^:]+:\s*/, ''), `×${l.quantity}`].filter(Boolean).join(' · ')}
             </p>
-          ) : (
-            <div className="panel" style={{ padding: '16px 20px', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-              <span>Checking out as a guest. No account needed.</span>
-              <Link className="link" to="/sign-in?back=/checkout" style={{ marginLeft: 'auto' }}>
-                Sign in to use a saved address
-              </Link>
+            {!l.enoughStock && (
+              <p style={{ fontSize: 12, color: 'var(--bad)' }}>
+                Not enough left. <Link className="link" to="/cart">Change it in the bag</Link>
+              </p>
+            )}
+          </div>
+          <span className="price" style={{ fontSize: 13 }}>
+            {tk(l.lineTotal)}
+          </span>
+        </div>
+      ))}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input className="input" aria-label="Promo code" placeholder="Promo code" autoComplete="off" style={{ minHeight: 44 }} value={promo} onChange={(e) => setPromo(e.target.value)} />
+        <button
+          type="button"
+          className="tbtn"
+          style={{ minHeight: 44 }}
+          onClick={() => setPromoMsg(promo.trim() ? `The code ${promo.trim().toUpperCase()} is not active. Check the spelling or the end date.` : '')}
+        >
+          Apply
+        </button>
+      </div>
+      <div aria-live="polite">
+        {promoMsg && (
+          <span className="co-err">
+            <Icon name="alert" small />
+            {promoMsg}
+          </span>
+        )}
+      </div>
+      {q ? (
+        <>
+          <div className="row">
+            <span>Subtotal</span>
+            <span>{tk(q.subtotal)}</span>
+          </div>
+          <div className="row">
+            <span>Delivery to {q.district}</span>
+            <span>{q.deliveryFee ? tk(q.deliveryFee) : 'Free'}</span>
+          </div>
+          <div className="row total">
+            <span>Total</span>
+            <span>{tk(q.total)}</span>
+          </div>
+        </>
+      ) : quote.error ? (
+        <p role="alert">{errorMessage(quote.error)}</p>
+      ) : (
+        <p style={{ color: 'var(--muted)' }}>Pricing…</p>
+      )}
+    </>
+  )
+  const trust = (
+    <div className="trust" style={{ flexDirection: 'column', gap: 8 }}>
+      <span>
+        <Icon name="shield" />
+        Open the parcel and check it before you pay
+      </span>
+      <span>
+        <Icon name="return" />
+        7-day returns on unopened items
+      </span>
+    </div>
+  )
+
+  return (
+    <div className="co">
+      <CheckoutHeader />
+      <form onSubmit={submit} noValidate>
+        <div className="ph-only">
+          <button type="button" className="co-sum-toggle" aria-expanded={summaryOpen} aria-controls="co-sum" onClick={() => setSummaryOpen((o) => !o)}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <Icon name="bag" small />
+              {summaryOpen ? 'Hide order summary' : `Show order summary · ${itemCount} item${itemCount === 1 ? '' : 's'}`}
+            </span>
+            <span className="price" style={{ color: 'var(--text)', fontSize: 16 }}>
+              {total != null ? tk(total) : ''}
+            </span>
+          </button>
+          <div id="co-sum" className="co-sum-body" hidden={!summaryOpen}>
+            {summaryLines}
+          </div>
+        </div>
+
+        <div className="page co-layout">
+          <div className="co-main">
+            <div className="steps ph-only" aria-hidden="true">
+              <i className="on" />
+              <i className={form.fullName && form.phone && form.area && form.addressLine ? 'on' : undefined} />
             </div>
-          )}
-          {problem && (
-            <div className="err-summary" role="alert" tabIndex={-1} ref={problemBox}>
-              <strong>{problem.title}</strong>
-              <ul>
-                {problem.items.map(([id, message], i) => (
-                  <li key={i}>
-                    {id ? (
-                      <>
-                        <a
-                          href={`#co-${id}`}
-                          onClick={(e) => {
-                            e.preventDefault()
-                            document.getElementById(`co-${id}`)?.focus()
-                          }}
-                        >
-                          {LABELS[id]}
-                        </a>
-                        : {message}
-                      </>
-                    ) : (
-                      message
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          <section className="panel co-step" aria-labelledby="st1">
-            <div className="co-step-head">
-              <span className="n">1</span>
-              <h2 id="st1">Where should we deliver?</h2>
-            </div>
-            <div className="fields">
-              {field('fullName', 'Full name', <input {...inputProps('fullName')} autoComplete="name" aria-required="true" onChange={(e) => set('fullName', e.target.value)} />)}
-              {field(
-                'phone',
-                'Mobile number',
-                <div className="prefix">
-                  <span>+88</span>
-                  <input {...inputProps('phone')} type="tel" inputMode="numeric" autoComplete="tel-national" placeholder="01XXXXXXXXX" aria-required="true" onChange={(e) => set('phone', e.target.value)} />
-                </div>,
-                { help: 'The rider calls this number before arriving.' },
+            <div className="co-title">
+              <h1 className="display co-h1">Checkout</h1>
+              {member ? (
+                <p style={{ fontSize: 14, color: 'var(--text-2)' }}>
+                  Signed in as <b style={{ color: 'var(--text)' }}>{user?.name || user?.phone}</b>.{saved ? ' We filled in your saved address.' : ' We save this address for next time.'}
+                </p>
+              ) : (
+                <div className="co-guest">
+                  <span>Checking out as a guest. No account needed.</span>
+                  <Link className="link" to="/sign-in?back=/checkout">
+                    Sign in<span className="d-only-inline"> to use a saved address</span>
+                  </Link>
+                </div>
               )}
-              <div className="field">
-                <label htmlFor="co-district">District</label>
-                <select className="input" id="co-district" value={form.district} onChange={(e) => set('district', e.target.value)}>
-                  {(delivery.data?.districts ?? [form.district]).map((d) => (
-                    <option key={d}>{d}</option>
+            </div>
+
+            {problem && (
+              <div className="err-summary" role="alert" tabIndex={-1} ref={problemBox}>
+                <strong>{problem.title}</strong>
+                <ul>
+                  {problem.items.map(([id, message], i) => (
+                    <li key={i}>
+                      {id ? (
+                        <>
+                          <a
+                            href={`#co-${id}`}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              document.getElementById(`co-${id}`)?.focus()
+                            }}
+                          >
+                            {LABELS[id]}
+                          </a>
+                          : {message}
+                        </>
+                      ) : (
+                        message
+                      )}
+                    </li>
                   ))}
-                </select>
+                </ul>
               </div>
-              {field('area', 'Area or thana', <input {...inputProps('area')} autoComplete="address-level2" placeholder="e.g. Dhanmondi" aria-required="true" onChange={(e) => set('area', e.target.value)} />)}
-              {field(
-                'addressLine',
-                'House, road and flat',
-                <textarea {...inputProps('addressLine')} autoComplete="street-address" placeholder="House 12, Road 5, Flat 3B" onChange={(e) => set('addressLine', e.target.value)} />,
-                { full: true },
-              )}
-              <div className="field full">
-                <button type="button" className="link" style={{ justifySelf: 'start', textAlign: 'left' }} aria-expanded={more || !!form.note} aria-controls="co-more" onClick={() => setMore((m) => !m)}>
-                  Add an email receipt or a note for the rider
-                </button>
+            )}
+
+            <section className="co-step" aria-labelledby="st1">
+              <div className="co-step-head">
+                <span className="co-n d-only">1</span>
+                <h2 id="st1" className="display">
+                  <span className="ph-only-inline">1 · </span>Where should we deliver?
+                </h2>
               </div>
-              <div className="field full" id="co-more" hidden={!(more || form.note || errors.email)}>
-                <div className="fields">
-                  {field('email', 'Email for the receipt', <input {...inputProps('email')} type="email" autoComplete="email" onChange={(e) => set('email', e.target.value)} />, { optional: true })}
+              <div className="co-fields">
+                {field(
+                  'phone',
+                  'Mobile number',
+                  <div className="prefix">
+                    <span>+88</span>
+                    <input {...inputProps('phone')} type="tel" inputMode="numeric" autoComplete="tel-national" placeholder="01XXXXXXXXX" aria-required="true" onChange={(e) => set('phone', e.target.value)} />
+                  </div>,
+                  { help: 'The rider calls this number before arriving.' },
+                )}
+                {field('fullName', 'Full name', <input {...inputProps('fullName')} autoComplete="name" aria-required="true" onChange={(e) => set('fullName', e.target.value)} />)}
+                <fieldset className="field" style={{ gridColumn: '1 / -1', border: 0, padding: 0, margin: 0 }}>
+                  <legend style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>District</legend>
+                  <div className="co-choices two">
+                    {/* The zone name inside <b> is the label's text; the rule does not look that deep. */}
+                    {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                    <label className={isInside ? 'choice on' : 'choice'}>
+                      <input className="vh" type="radio" name="zone" checked={isInside} onChange={() => set('district', inside[0])} />
+                      <span className="radio" />
+                      <span>
+                        <b style={{ display: 'block', fontSize: 14 }}>Inside Dhaka</b>
+                        <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                          {delivery.data ? `${delivery.data.insideEstimate} · ${tk(delivery.data.insideFee)}` : ''}
+                        </span>
+                      </span>
+                    </label>
+                    {/* The zone name inside <b> is the label's text; the rule does not look that deep. */}
+                    {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                    <label className={!isInside ? 'choice on' : 'choice'}>
+                      <input className="vh" type="radio" name="zone" checked={!isInside} disabled={!outsideList.length} onChange={() => set('district', outsideList[0])} />
+                      <span className="radio" />
+                      <span>
+                        <b style={{ display: 'block', fontSize: 14 }}>Outside Dhaka</b>
+                        <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                          {delivery.data ? `${delivery.data.outsideEstimate} · ${tk(delivery.data.outsideFee)}` : ''}
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                  {!isInside && (
+                    <select className="input" aria-label="Your district" style={{ marginTop: 8, maxWidth: 320 }} value={form.district} onChange={(e) => set('district', e.target.value)}>
+                      {outsideList.map((d) => (
+                        <option key={d}>{d}</option>
+                      ))}
+                    </select>
+                  )}
+                </fieldset>
+                {field('area', 'Area or thana', <input {...inputProps('area')} autoComplete="address-level2" placeholder="e.g. Mirpur 10" aria-required="true" onChange={(e) => set('area', e.target.value)} />)}
+                {field(
+                  'addressLine',
+                  'House, road and flat',
+                  <textarea {...inputProps('addressLine')} className="input co-textarea" autoComplete="street-address" placeholder="House 9, Road 1, Flat 4A" onChange={(e) => set('addressLine', e.target.value)} />,
+                )}
+                <div className="ph-only" style={{ gridColumn: '1 / -1' }}>
+                  {!(more || form.note || errors.email) && (
+                    <button type="button" className="link" style={{ border: 0, background: 'transparent', padding: 0, fontSize: 14 }} aria-expanded={false} aria-controls="co-more" onClick={() => setMore(true)}>
+                      Add an email receipt or a note for the rider
+                    </button>
+                  )}
+                </div>
+                <div id="co-more" className={more || form.note || errors.email ? 'co-more open' : 'co-more'}>
+                  {field('email', 'Email for the receipt', <input {...inputProps('email')} type="email" autoComplete="email" placeholder="you@example.com" onChange={(e) => set('email', e.target.value)} />, { optional: true })}
                   <div className="field">
                     <label htmlFor="co-note">
-                      Note for the rider<span className="opt-l"> (optional)</span>
+                      Note for the rider<span style={{ fontWeight: 400, color: 'var(--muted)' }}> (optional)</span>
                     </label>
                     <input className="input" id="co-note" value={form.note} maxLength={200} placeholder="Call when at the gate" onChange={(e) => set('note', e.target.value)} />
                   </div>
                 </div>
               </div>
-            </div>
-          </section>
-          <section className="panel co-step" aria-labelledby="st2">
-            <div className="co-step-head">
-              <span className="n">2</span>
-              <h2 id="st2">How do you want to pay?</h2>
-            </div>
-            <div className="choices" role="radiogroup" aria-labelledby="st2">
-              {methods.map((m) => (
-                // The method name inside <strong> is the label's text; the rule cannot read it through the lookup.
-                // eslint-disable-next-line jsx-a11y/label-has-associated-control
-                <label className="choice" key={m}>
-                  <input type="radio" name="pay" value={m} checked={method === m} onChange={() => set('paymentMethod', m)} />
-                  <span>
-                    <strong>{METHOD_NAMES[m]}</strong>
-                    <span>{PAY_COPY[m]}</span>
-                  </span>
-                  <span className="tag" />
-                </label>
-              ))}
-            </div>
-            {preorderLines.length > 0 && (
-              <p className="muted">
-                Your cart has a pre-order: {preorderLines.map((l) => `${l.name} arrives ${releaseMonth(l.preorderRelease) || 'soon'}`).join('; ')}.
-              </p>
-            )}
-          </section>
-        </div>
-        <aside className="panel co-summary" aria-label="Order summary">
-          <h2 className="h3">Your order</h2>
-          <div className="mini-items">
-            {(q?.lines ?? []).map((l) => (
-              <div className="mini" key={`${l.productId}-${l.optionId}`}>
-                <span className="slot">
-                  <ProductImage slug={l.slug} url={l.thumbnailUrl} />
-                  <span className="q">{l.quantity}</span>
-                </span>
-                <div style={{ minWidth: 0 }}>
-                  <div>{l.name}</div>
-                  {l.optionLabel && <div className="v">{l.optionLabel}</div>}
-                  {!l.enoughStock && (
-                    <div className="v" style={{ color: 'var(--bad)' }}>
-                      Not enough left. <Link className="link" to="/cart">Change it in the cart</Link>
-                    </div>
-                  )}
-                </div>
-                <span>{tk(l.lineTotal)}</span>
+            </section>
+
+            <section className="co-step" aria-labelledby="st2">
+              <div className="co-step-head">
+                <span className="co-n d-only">2</span>
+                <h2 id="st2" className="display">
+                  <span className="ph-only-inline">2 · </span>How do you want to pay?
+                </h2>
               </div>
-            ))}
+              <div className="co-choices" role="radiogroup" aria-labelledby="st2">
+                {methods.map((m) => (
+                  // The method name inside <b> is the label's text; the rule cannot read it through the lookup.
+                  // eslint-disable-next-line jsx-a11y/label-has-associated-control
+                  <label className={method === m ? 'choice on' : 'choice'} key={m}>
+                    <input className="vh" type="radio" name="pay" value={m} checked={method === m} onChange={() => set('paymentMethod', m)} />
+                    <span className="radio" />
+                    <span style={{ flex: 1 }}>
+                      <b style={{ display: 'block', fontSize: 15 }}>{METHOD_NAMES[m]}</b>
+                      <span style={{ fontSize: 13, color: 'var(--muted)' }}>{PAY_COPY[m]}</span>
+                    </span>
+                    {m === 'COD' && methods.length > 1 && <span className="tag pink">Most chosen</span>}
+                  </label>
+                ))}
+              </div>
+              {preorderLines.length > 0 && (
+                <p style={{ fontSize: 14, color: 'var(--text-2)' }}>
+                  Your bag has a pre-order: {preorderLines.map((l) => `${l.name} arrives ${releaseMonth(l.preorderRelease) || 'soon'}`).join('; ')}.
+                </p>
+              )}
+            </section>
+            <div className="ph-only">{trust}</div>
+            <div className="ph-only" style={{ height: 120 }} />
           </div>
-          <div className="promo">
-            <label className="vh" htmlFor="promo">
-              Promo code
-            </label>
-            <input className="input" id="promo" placeholder="Promo code" autoComplete="off" value={promo} onChange={(e) => setPromo(e.target.value)} />
-            <button
-              type="button"
-              className="btn alt"
-              onClick={() => setPromoMsg(promo.trim() ? `The code ${promo.trim().toUpperCase()} is not active. Check the spelling or the end date.` : '')}
-            >
-              Apply
+
+          <aside className="panel co-aside d-only" aria-label="Order summary">
+            <h2 className="display" style={{ fontSize: 22 }}>
+              Your order
+            </h2>
+            {summaryLines}
+            <button className="btn block" type="submit" disabled={!canPlace}>
+              {placeLabel}
             </button>
-          </div>
-          <div aria-live="polite">
-            {promoMsg && (
-              <span className="err" style={{ color: 'var(--bad)', fontSize: 14, display: 'flex', gap: 6 }}>
-                <Icon name="alert" />
-                {promoMsg}
-              </span>
-            )}
-          </div>
-          {q ? (
-            <>
-              <div className="sum-row">
-                <span>Subtotal</span>
-                <span>{tk(q.subtotal)}</span>
-              </div>
-              <div className="sum-row">
-                <span>Delivery to {q.district}</span>
-                <span>{q.deliveryFee ? tk(q.deliveryFee) : 'Free'}</span>
-              </div>
-              <div className="sum-row total">
-                <span>Total</span>
-                <span>{tk(q.total)}</span>
-              </div>
-            </>
-          ) : quote.error ? (
-            <p role="alert">{errorMessage(quote.error)}</p>
-          ) : (
-            <p className="muted">Pricing…</p>
-          )}
-          <button className="btn lg block" type="submit" disabled={placing || !q || !q.allInStock}>
-            {placing ? 'Placing your order…' : total != null ? `Place order, ${tk(total)}` : 'Place order'}
+            <p style={{ fontSize: 13, color: 'var(--muted)', textAlign: 'center' }}>{payNote}</p>
+            <div style={{ borderTop: '1px solid var(--line)', paddingTop: 14 }}>{trust}</div>
+          </aside>
+        </div>
+
+        <div className="stickybar ph-only" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 6, position: 'fixed', left: 0, right: 0 }}>
+          <button className="btn block" type="submit" disabled={!canPlace}>
+            {placeLabel}
           </button>
-          <p className="muted" style={{ fontSize: 14 }}>
-            {method === 'COD' ? 'Nothing is charged now. You pay when it arrives.' : 'You confirm the payment on the next screen.'}
-          </p>
-          <div className="trust">
-            {q && (
-              <div>
-                <Icon name="truck" />
-                <span>Arrives in {q.deliveryEstimate}</span>
-              </div>
-            )}
-            <div>
-              <Icon name="return" />
-              <span>7-day returns on unopened items</span>
-            </div>
-          </div>
-        </aside>
+          <p style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center' }}>{payNote}</p>
+        </div>
       </form>
     </div>
+  )
+}
+
+/** The focused checkout header: back to the bag, the wordmark, "Secure". No menu, no search. */
+export function CheckoutHeader() {
+  const bag = useBag()
+  return (
+    <header className="co-hdr">
+      <div className="page co-hdr-row">
+        <button type="button" className="ibtn ph-only" aria-label="Back to bag" onClick={bag.open}>
+          <Icon name="back" />
+        </button>
+        <button type="button" className="ulink d-only" style={{ justifySelf: 'start', border: 0, borderBottom: '1px solid currentColor', background: 'transparent' }} onClick={bag.open}>
+          ← Back to bag
+        </button>
+        <Link className="mark" to="/">
+          senpai<span>.</span>supply
+        </Link>
+        <span className="meta" style={{ justifySelf: 'end', display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+          <Icon name="shield" small />
+          <span className="ph-only-inline">Secure</span>
+          <span className="d-only-inline">Secure checkout</span>
+        </span>
+      </div>
+    </header>
   )
 }

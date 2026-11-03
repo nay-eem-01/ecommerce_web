@@ -1,6 +1,7 @@
 import { lazy, type ComponentType } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { RequireAuth } from './features/auth/RequireAuth'
+import { CartPage } from './features/cart/Bag'
 import { CharactersPage } from './features/catalog/CharactersPage'
 import { ListingPage } from './features/catalog/ListingPage'
 import { NotFoundPage } from './features/errors/NotFoundPage'
@@ -13,7 +14,6 @@ const page = <K extends string>(load: () => Promise<Record<K, ComponentType>>, n
   lazy(() => load().then((m) => ({ default: m[name] })))
 
 const SearchPage = page(() => import('./features/search/SearchPage'), 'SearchPage')
-const CartPage = page(() => import('./features/cart/CartPage'), 'CartPage')
 const CheckoutPage = page(() => import('./features/checkout/CheckoutPage'), 'CheckoutPage')
 const DonePage = page(() => import('./features/checkout/DonePage'), 'DonePage')
 const PaymentResultPage = page(() => import('./features/checkout/PaymentResultPage'), 'PaymentResultPage')

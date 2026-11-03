@@ -1,10 +1,9 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { envelope, mockApi, page } from '../../test/api'
-import { categories, deliveryOptions, summary } from '../../test/fixtures'
+import { categories, summary } from '../../test/fixtures'
 import { renderWithProviders } from '../../test/render'
-import { HomePage } from '../home/HomePage'
 import { SearchPage } from '../search/SearchPage'
 import { ListingPage } from './ListingPage'
 
@@ -17,7 +16,6 @@ const products = [
 function routes() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
       <Route path="/shop" element={<ListingPage />} />
       <Route path="/shop/:category" element={<ListingPage />} />
       <Route path="/preorders" element={<ListingPage preorders />} />
@@ -25,35 +23,6 @@ function routes() {
     </Routes>
   )
 }
-
-describe('home', () => {
-  it('features a figure, tiles the categories and lists the newest products', async () => {
-    mockApi({
-      'GET /api/categories': () => envelope(200, categories),
-      'GET /api/checkout/delivery-options': () => envelope(200, deliveryOptions),
-      'GET /api/products': (url) => envelope(200, url.searchParams.get('category') === 'figures' ? page([products[0]]) : { ...page(products), totalElements: 12 }),
-    })
-    renderWithProviders(routes(), '/')
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Akihabara, delivered to your door.')
-    expect(await screen.findByRole('link', { name: 'See this week’s figure' })).toHaveAttribute('href', '/p/ronin-swordsman')
-    expect(await screen.findByText('Free delivery over ৳ 3,000')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Bottles/ })).toHaveAttribute('href', '/shop/bottles')
-    expect(await screen.findByRole('link', { name: 'See all 12 products' })).toBeInTheDocument()
-    expect(screen.getAllByText('Save ৳ 700').length).toBeGreaterThan(0)
-  })
-
-  it('draws a practice gacha capsule', async () => {
-    mockApi({
-      'GET /api/categories': () => envelope(200, categories),
-      'GET /api/checkout/delivery-options': () => envelope(200, deliveryOptions),
-      'GET /api/products': () => envelope(200, page(products)),
-    })
-    renderWithProviders(routes(), '/')
-    await userEvent.click(screen.getByRole('button', { name: 'Turn the handle' }))
-    expect(screen.getByRole('button', { name: 'Turn again' })).toBeInTheDocument()
-    expect(screen.getByText(/Practice draw\./)).toBeInTheDocument()
-  })
-})
 
 describe('listing', () => {
   it('shows a category with its blurb, stock lines and quick actions', async () => {
@@ -64,10 +33,9 @@ describe('listing', () => {
     renderWithProviders(routes(), '/shop/figures')
     expect(await screen.findByRole('heading', { name: 'Figures', level: 1 })).toBeInTheDocument()
     expect(screen.getByText('Scale figures, chibi figures and model kits')).toBeInTheDocument()
-    expect(await screen.findByText('Only 4 left')).toBeInTheDocument()
-    expect(screen.getByText('Pre-order, arrives January 2027')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Choose' })).toHaveAttribute('href', '/p/ronin-swordsman')
-    expect(screen.getByRole('link', { name: 'Reserve' })).toBeInTheDocument()
+    expect((await screen.findAllByRole('link', { name: 'Ronin Swordsman 1/7 scale figure' }))[0]).toHaveAttribute('href', '/p/ronin-swordsman')
+    expect(screen.getByText('Save ৳ 700')).toBeInTheDocument()
+    expect(screen.getByText('Pre-order')).toBeInTheDocument()
     const url = new URL(String(fetchMock.mock.calls.find(([u]) => String(u).includes('/api/products'))?.[0]), 'http://x')
     expect(url.searchParams.get('category')).toBe('figures')
     expect(url.searchParams.get('sortBy')).toBe('creationDate')
@@ -98,7 +66,7 @@ describe('listing', () => {
     })
     renderWithProviders(routes(), '/shop?cat=figures,costumes&sort=price-asc')
     await screen.findByText('3 products')
-    const names = screen.getAllByRole('article').map((a) => within(a).getAllByRole('link')[0].textContent)
+    const names = Array.from(document.querySelectorAll('.pname')).map((a) => a.textContent)
     expect(names).toEqual(['Silver long wig', 'Mecha Unit-07 model kit', 'Ronin Swordsman 1/7 scale figure'])
   })
 

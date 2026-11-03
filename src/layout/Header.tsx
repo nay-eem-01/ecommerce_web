@@ -54,7 +54,7 @@ export function Header() {
               <BagButton count={count} onOpen={bag.open} />
             </div>
           </div>
-          <div className="d-hdr-row d-only" style={{ display: 'grid' }}>
+          <div className="d-hdr-row d-only">
             <nav className="d-nav" aria-label="Shop">
               {items.map((item) => (
                 <NavLink

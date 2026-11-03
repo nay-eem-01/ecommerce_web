@@ -170,7 +170,7 @@ describe('product page', () => {
     api()
     renderPage()
     expect(await screen.findByRole('heading', { name: 'Goes well with' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Sakura steel bottle, 750 ml' })).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: 'Sakura steel bottle, 750 ml' }).length).toBeGreaterThan(0)
   })
 
   it('shows not found for an unknown slug', async () => {

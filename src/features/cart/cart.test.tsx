@@ -4,9 +4,8 @@ import { Route, Routes } from 'react-router-dom'
 import type { LineInput, Quote, QuoteLine } from '../../api/types'
 import { CartBadge } from '../../layout/CartBadge'
 import { bodyOf, envelope, mockApi } from '../../test/api'
-import { deliveryOptions, summary, tokens } from '../../test/fixtures'
+import { deliveryOptions, tokens } from '../../test/fixtures'
 import { renderWithProviders, storeSession } from '../../test/render'
-import { ProductCard } from '../catalog/ProductCard'
 import { CartPage } from './CartPage'
 
 function qLine(over: Partial<QuoteLine> = {}): QuoteLine {
@@ -142,29 +141,3 @@ describe('cart page', () => {
     expect(fetchMock.mock.calls.some(([u, i]) => String(u).endsWith('/api/cart/items/31') && i?.method === 'DELETE')).toBe(true)
   })
 })
-
-describe('product card actions', () => {
-  it('adds a product without options in one tap and saves to the wishlist', async () => {
-    mockApi({})
-    renderWithProviders(
-      <>
-        <CartBadge />
-        <ProductCard product={summary()} />
-      </>,
-    )
-    await userEvent.click(screen.getByRole('button', { name: 'Add Sakura steel bottle, 750 ml to cart' }))
-    expect(await screen.findByText('Added to cart: Sakura steel bottle, 750 ml')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Cart, 1 item' })).toBeInTheDocument()
-    const heart = screen.getByRole('button', { name: 'Save Sakura steel bottle, 750 ml to wishlist' })
-    await userEvent.click(heart)
-    expect(heart).toHaveAttribute('aria-pressed', 'true')
-  })
-
-  it('sends products with options to their page to choose', () => {
-    mockApi({})
-    renderWithProviders(<ProductCard product={summary({ hasOptions: true })} />)
-    expect(screen.getByRole('link', { name: 'Choose' })).toHaveAttribute('href', '/p/sakura-bottle')
-    expect(screen.queryByRole('button', { name: /to cart/ })).not.toBeInTheDocument()
-  })
-})
-

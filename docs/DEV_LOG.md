@@ -7,21 +7,52 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
 
 ## Where we are
 
-- Phase 2 on `feat/storefront-base`: 2.1 scaffold (`chore/storefront-scaffold`) 2.2 catalog pages
-  (`feat/catalog-pages`), 2.3 product page (`feat/product-page`) 2.4 cart (`feat/cart`), 2.5
-  checkout (`feat/checkout`) and 2.6 account (`feat/account`) and 2.7
-  end-to-end tests (`test/e2e`) done. **Phase 2 is complete.**
+- Phase 2 (v1 storefront) is merged into `development`.
+- **Phase 2v, the v2 design, is complete** on `feat/storefront-v2-base`: v2.1 `feat/v2-foundation` → v2.2
+  `feat/v2-home` → v2.3 `feat/v2-listing` → v2.4 `feat/v2-product` → v2.5 `feat/v2-bag-checkout` → v2.6
+  `feat/v2-account` → v2.7 `chore/v2-e2e-docs`, stacked, each one building, linting and passing its tests.
+- It needs the backend's `feat/catalog-v2-base` (characters, facets, sets, early access, v2 demo catalog).
 
 ## Next up
 
-1. **Nayeem:** PR the steps in order (they are pushed to `nay-eem-01/ecommerce_web`) into
-   `feat/storefront-base`, then the base into `development`.
-2. **Backend:** `docs/BACKEND_REQUESTS.md`, first the refresh-token grace window.
-3. Real product photos and 36-frame turntables replace the stand-in renders as they are shot.
+1. **Nayeem:** merge the backend v2 PRs first, then PR the v2 steps in order into `feat/storefront-v2-base`, then the
+   base into `development` (see the PR order in the session notes / below).
+2. **Backend:** `docs/BACKEND_REQUESTS.md`, first the refresh-token grace window, then `stockLeft` on quote lines and
+   the amount due on the order list.
+3. Real product photos and 36-frame turntables replace the product art as they are shot.
 
 ## Open items
 
 - `npm audit`: 3 moderate advisories in `openapi-typescript`'s dependencies (development tool only, not shipped).
+- The e2e online-payment test follows the backend's `PAYMENT_RETURN_URL` (default port 5173): keep `npm run dev`
+  running beside `npm run e2e`.
+
+---
+
+## 2026-11-03: The v2 design on every screen (phase 2v)
+
+**Done**
+- v2.1 to v2.6 as in the roadmap: the canvas stylesheet verbatim, product art in place of photos, home, listings with
+  the filter sheet (phone) and filter bar (desktop) in the URL, characters, sets, coming soon with early access,
+  search with suggestions and recent searches, the product page with the 360 gallery and set offer, the bag drawer,
+  focused checkout with the Inside/Outside Dhaka choice, the order-placed page, sign-in with six code boxes, and the
+  account with tabs (phone) and side nav (desktop).
+- v2.7: the Playwright tests rewritten for the v2 screens and catalog (bag drawer, `Place order · ৳ X`, code boxes,
+  account order cards). All five pass against the backend's v2 branch on a fresh development database. 102 unit and
+  screen tests pass.
+- Each screen checked at 390 and 1440 px against the canvas on a real backend (screenshots), no sideways scroll.
+
+**Bugs found and fixed on the way**
+- `.d-only { display: revert }` broke the header grid; the breakpoint classes now hide with `display: none` only.
+- The bag drawer rendered outside `.app` and lost the type styles; it renders inside now.
+- The code boxes pulled focus back to the first box: moving focus ran the next box's guard against the value before
+  React re-rendered. They keep the latest value in a ref (regression test in `account.test.tsx`).
+- `.app p { font-weight: 400 }` out-ranked single classes (order number, `p.price`); bolded with `.app` selectors.
+
+**Decisions**
+- The bag's add-on swaps a part for its set (the set is its own product) rather than adding the other part.
+- `/account` opens on the orders, as the design does; `/account/orders` redirects there; Details is a fourth tab.
+- Deviations from the canvas are listed in `docs/DESIGN.md`.
 
 ---
 

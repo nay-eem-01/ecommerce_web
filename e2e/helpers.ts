@@ -19,17 +19,26 @@ export function otpFromLog(logFile: string, phone: string): string | null {
   return line ? (/: (\d{6}) is your/.exec(line)?.[1] ?? null) : null
 }
 
+/** Fills step 1 of checkout. `district` other than Dhaka picks "Outside Dhaka" and then that district. */
 export async function fillDelivery(page: Page, details: { name: string; phone: string; district?: string; area: string; address: string }) {
-  await page.getByLabel('Full name').fill(details.name)
   await page.getByLabel('Mobile number').fill(details.phone)
-  if (details.district) await page.getByLabel('District').selectOption(details.district)
+  await page.getByLabel('Full name').fill(details.name)
+  if (details.district && details.district !== 'Dhaka') {
+    await page.getByText('Outside Dhaka').click()
+    await page.getByLabel('Your district').selectOption(details.district)
+  }
   await page.getByLabel('Area or thana').fill(details.area)
   await page.getByLabel('House, road and flat').fill(details.address)
 }
 
+/** Types the texted code into the six boxes (a fill of the first box is what the SMS autofill does). */
+export async function enterCode(page: Page, code: string) {
+  await page.getByLabel('Digit 1').fill(code)
+}
+
 /** The order number shown on a confirmation or result page. */
 export async function orderNumberOnPage(page: Page): Promise<string> {
-  const text = await page.locator('.done').innerText()
+  const text = await page.locator('.done-hero-copy').innerText()
   const match = /SS-[A-Z0-9]+/.exec(text)
   expect(match, 'order number on the page').not.toBeNull()
   return match![0]

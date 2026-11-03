@@ -9,7 +9,7 @@ into the phase's base branch (see `.claude/skills/git-workflow`).
 
 **Legend:** ✅ done · 🔄 in progress · ⬜ not started
 
-**Progress:** 7 of 7 steps done. Phase 2 is complete.
+**Progress:** Phase 2 complete. Phase 2v (the v2 design): 7 of 7 steps done.
 
 ## Phase 2 - Storefront (`feat/storefront-base`)
 
@@ -22,3 +22,18 @@ into the phase's base branch (see `.claude/skills/git-workflow`).
 | 2.5 | Checkout with Idempotency-Key, confirmation, payment redirect and result, retry payment, order page, guest tracking, help | `feat/checkout` | ✅ |
 | 2.6 | Phone-code sign-in with cart and wishlist merge; account: overview, orders, wishlist, addresses | `feat/account` | ✅ |
 | 2.7 | Playwright end-to-end: browse, cart, checkout, track, online payment, sign in, two tabs; the cross-tab refresh fix it found | `test/e2e` | ✅ |
+
+## Phase 2v - Storefront v2 design (`feat/storefront-v2-base`)
+
+The "Senpai Supply v2" canvas on every screen, phone and desktop (`docs/DESIGN.md`). Needs the backend's
+`feat/catalog-v2-base` (characters, tags and facets, sets, early access, the v2 demo catalog).
+
+| # | Step | Branch | Status |
+|---|---|---|---|
+| v2.1 | Design system (canvas stylesheet, tokens, fonts and sign slices), product art, icons, header with phone menu and desktop nav, footer, bag context, API types and hooks for characters, facets, sets and early access | `feat/v2-foundation` | ✅ |
+| v2.2 | Home (drop hero, tiles with coming soon and early access, New in, characters, set feature, story) and the image-first product card with quick add | `feat/v2-home` | ✅ |
+| v2.3 | Listings (all, category, character, sets, pre-orders) with filter sheet and desktop filter bar in the URL, coming soon, characters page, search | `feat/v2-listing` | ✅ |
+| v2.4 | Product page: 360 gallery, swatches, quantity, set offer, accordions, related, sticky bar | `feat/v2-product` | ✅ |
+| v2.5 | Bag drawer and `/cart`, focused checkout, order placed, payment result | `feat/v2-bag-checkout` | ✅ |
+| v2.6 | Sign-in with six code boxes, account (orders, wishlist, addresses, details), order and track pages | `feat/v2-account` | ✅ |
+| v2.7 | End-to-end tests on the v2 screens and catalog; docs | `chore/v2-e2e-docs` | ✅ |

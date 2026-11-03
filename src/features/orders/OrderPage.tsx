@@ -35,9 +35,9 @@ export function OrderPage() {
   if (status === 'restoring') return <PageLoading />
   if (status !== 'signed-in') {
     return (
-      <div className="wrap">
+      <div className="page">
         <div className="auth">
-          <h1 className="page-title" style={{ padding: 0 }}>
+          <h1 className="display page-h1" style={{ padding: 0 }}>
             Order {orderNumber}
           </h1>
           <div className="panel">
@@ -45,7 +45,7 @@ export function OrderPage() {
             <Link className="btn block" to={`/sign-in?back=${encodeURIComponent(`/orders/${orderNumber}`)}`}>
               Sign in
             </Link>
-            <Link className="btn alt block" to={`/track?order=${encodeURIComponent(orderNumber)}`}>
+            <Link className="btn ghost block" to={`/track?order=${encodeURIComponent(orderNumber)}`}>
               Track without signing in
             </Link>
           </div>
@@ -54,7 +54,7 @@ export function OrderPage() {
     )
   }
   if (order.isPending) return <PageLoading />
-  if (order.error) return (order.error as { status?: number }).status === 404 ? <NotFoundPage /> : <p className="wrap">{errorMessage(order.error)}</p>
+  if (order.error) return (order.error as { status?: number }).status === 404 ? <NotFoundPage /> : <p className="page">{errorMessage(order.error)}</p>
   return <OrderDetail order={order.data} />
 }
 
@@ -76,17 +76,17 @@ function OrderDetail({ order: o }: { order: Order }) {
   }
 
   return (
-    <div className="wrap" style={{ paddingTop: 24, paddingBottom: 64, display: 'grid', gap: 24, maxWidth: 880 }}>
-      <nav className="crumbs" aria-label="Breadcrumb" style={{ padding: 0 }}>
-        <Link to="/account/orders">My orders</Link>
+    <div className="page" style={{ paddingTop: 24, paddingBottom: 64, display: 'grid', gap: 24, maxWidth: 880 }}>
+      <nav className="meta crumbs" aria-label="Breadcrumb" style={{ padding: 0 }}>
+        <Link to="/account">My orders</Link>
         <span aria-hidden="true">/</span>
         <span>{o.orderNumber}</span>
       </nav>
       <div className="order-top">
-        <h1 className="page-title" style={{ padding: 0 }}>
+        <h1 className="display page-h1" style={{ padding: 0 }}>
           Order {o.orderNumber}
         </h1>
-        <span className={`pill ${o.status === 'DELIVERED' ? 'ok' : o.status === 'CANCELLED' ? 'warn' : 'pre'}`}>{STATUS_LABEL[o.status]}</span>
+        <span className={`tag ${o.status === 'DELIVERED' ? 'ok' : o.status === 'CANCELLED' ? 'warn' : 'pre'}`}>{STATUS_LABEL[o.status]}</span>
       </div>
       <p className="muted">
         Placed {dateTime(o.placedAt)}. {METHOD_NAMES[o.paymentMethod]}: {PAYMENT_LABEL[o.paymentStatus]}.
@@ -139,14 +139,14 @@ function OrderDetail({ order: o }: { order: Order }) {
       </section>
       <div className="order-actions">
         {canPay && <RetryButton orderNumber={o.orderNumber} phone={o.phone} label="Pay now" />}
-        <button className="btn alt" type="button" onClick={buyAgain}>
+        <button className="btn ghost" type="button" onClick={buyAgain}>
           Buy again
         </button>
         {o.canCancel &&
           (confirming ? (
             <>
               <button
-                className="btn alt"
+                className="btn ghost"
                 type="button"
                 disabled={cancel.isPending}
                 onClick={() =>
@@ -159,12 +159,12 @@ function OrderDetail({ order: o }: { order: Order }) {
               >
                 {cancel.isPending ? 'Cancelling…' : 'Yes, cancel this order'}
               </button>
-              <button className="btn alt" type="button" onClick={() => setConfirming(false)}>
+              <button className="btn ghost" type="button" onClick={() => setConfirming(false)}>
                 Keep it
               </button>
             </>
           ) : (
-            <button className="btn alt" type="button" onClick={() => setConfirming(true)}>
+            <button className="btn ghost" type="button" onClick={() => setConfirming(true)}>
               Cancel order
             </button>
           ))}

@@ -41,7 +41,7 @@ export function Footer() {
           <h4>Account</h4>
           <ul>
             <li><Link to="/sign-in">Sign in</Link></li>
-            <li><Link to="/account/orders">My orders</Link></li>
+            <li><Link to="/account">My orders</Link></li>
             <li><Link to="/account/wishlist">Wishlist</Link></li>
           </ul>
         </div>

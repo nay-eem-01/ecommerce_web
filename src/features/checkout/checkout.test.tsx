@@ -242,7 +242,7 @@ describe('after checkout', () => {
     await userEvent.clear(screen.getByLabelText('Mobile number'))
     await userEvent.type(screen.getByLabelText('Mobile number'), '01812345678')
     await userEvent.click(screen.getByRole('button', { name: 'Track order' }))
-    expect(await screen.findByText('Packed', { selector: '.pill' })).toBeInTheDocument()
+    expect(await screen.findByText('Packed', { selector: '.tag' })).toBeInTheDocument()
     expect(screen.getByText('Sakura steel bottle, Colour: Petal pink ×1')).toBeInTheDocument()
   })
 
@@ -262,7 +262,7 @@ describe('after checkout', () => {
     expect(screen.getByText('Have ৳ 1,580 ready for the rider.')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Cancel order' }))
     await userEvent.click(screen.getByRole('button', { name: 'Yes, cancel this order' }))
-    expect(await screen.findByText('Cancelled', { selector: '.pill' })).toBeInTheDocument()
+    expect(await screen.findByText('Cancelled', { selector: '.tag' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Cancel order' })).not.toBeInTheDocument()
   })
 

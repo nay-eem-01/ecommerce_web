@@ -1,87 +1,80 @@
-# Design: concept C, "night market"
+# Design: concept C v2, "night market"
 
-The approved prototype (the "Senpai Supply Shop" artifact, nine views) is the specification. Its stylesheet is
-`src/styles/index.css`, kept class for class; screens reuse its markup and classes. This page explains the system so
-new screens fit without reopening the prototype.
+The approved design is the **Senpai Supply v2** canvas (artifact `L57GTL2pBx7DhE9FVV2tH3`): nine phone screens and
+nine desktop screens plus the desktop header and the product-art component. It keeps concept C's neon-pink Japanese
+night-store look and makes it product-first, in the way of the big clothing shops: large pictures, two products per
+row on phone, little chrome. Its stylesheet `ss.css` is pasted into `src/styles/index.css` verbatim; screens reuse its
+markup and classes, and the additions below it are named per screen (`.home-*`, `.listing-*`, `.pd-*`, `.bag-*`,
+`.co-*`, `.done-*`, `.si-*`, `.acct-*`, `.ocard-*`).
 
 ## Principles
 
-1. **Product first.** Every product view shows price, stock and delivery before the fold.
-2. **Low friction.** Guest checkout, two checkout steps, cash on delivery first, phone-code sign-in without passwords.
-3. **Honest.** Stock says "Only 4 left" only when it is true (the API sends `stockLeft` only while low). No fake
-   urgency, no promises the backend does not keep.
-4. **Spin it.** The 360 viewer is the signature: drag, swipe, arrow keys or auto-rotate.
+1. **Product first.** Pictures lead; a card is image, name, price and one tag. Phone grids are two wide (one on
+   request); desktop four (three on request).
+2. **The identity in one look.** The hero says who we are (a drop, a neon sign, "Carry your character."); characters
+   (Kitsune 狐, Ramen Cat 猫, Ronin 侍) are how people shop as much as categories are.
+3. **Low friction.** Guest checkout, the bag as a drawer, two checkout steps, cash on delivery first, phone-code
+   sign-in without a password.
+4. **Honest.** "Only 4 left" only when true; prices, fees and totals only from the server's quote; no fake urgency.
+5. **Spin it.** The 360 stays the signature of the product page.
 
-## Tokens (`:root` in `src/styles/index.css`)
+## Tokens and type
 
-| Token | Use |
-|---|---|
-| `--night`, `--night-2..4` | page, panels, raised panels, viewer centre |
-| `--text`, `--text-2`, `--muted` | primary, secondary, tertiary text |
-| `--line`, `--line-2` | dividers, control borders |
-| `--pink` (+ `--pink-deep`, `--glow`) | primary action, brand mark, neon sign, selected states |
-| `--cyan` | prices, links, focus ring, info |
-| `--ok`, `--warn`, `--bad` | in stock / delivered, low stock / stars, errors |
-| `--r` 8px, `--r-sm` 4px | panel and control radii |
-| `--wrap` 1240px | content width, 16px side gutters (safe-area aware) |
+Tokens are the canvas's `:root` (`--night`, `--night-2/3`, `--studio`, `--text`, `--text-2`, `--muted`, `--line`,
+`--line-2`, `--pink`, `--on-pink`, `--glow`, `--cyan`, `--ok`, `--warn`, `--bad`). Tailwind reads them for one-off
+layout. Dark only.
 
-Tailwind utilities read the same tokens (`text-pink`, `bg-night-2`, `border-line`) for one-off layout. Dark only:
-`color-scheme: dark`.
+- **Dela Gothic One** (`--display`): titles, the wordmark, neon signs, big amounts.
+- **M PLUS 1p** (`--body`): everything else.
+- Japanese glyphs are display-only; `src/styles/fonts-jp.css` holds the Dela Gothic One slices for
+  新学期 狐 猫 侍 雨 ありがとう おかえり 水 鞄 衣. A new sign with other characters falls back to the system font.
+- The taka sign is written `৳ 1,450` (`tk()`), tabular figures for money.
 
-## Type
+## Layout
 
-- **Dela Gothic One** (display): page titles, section titles, prices, the wordmark, category signs, the 新入荷 sign.
-- **M PLUS 1p** (interface): everything else, 16px base, 400/500/700/800.
-- Japanese glyphs are display-only; `src/styles/fonts-jp.css` holds the few Dela Gothic One slices that contain the
-  current category labels (像 衣 水 鞄) and 新入荷. A new label with other characters falls back to the system font.
-- The taka sign is written `৳ 6,800` (`tk()`), tabular figures for money and counts.
+- Breakpoint **900px**: `.ph-only` below, `.d-only` from it (`-inline` variants for text).
+- `.page`: 16px phone gutter, 40px desktop, 1440px max.
+- `.pgrid`: 2 columns on phone (`.one` for one), 4 on desktop (`.three` for three).
+- Phone product, account and checkout pages swap the menu for a back arrow; checkout has its own focused header and no
+  footer; the phone sign-in and order-placed pages show only the wordmark.
 
 ## Pages
 
-| Route | Prototype view | Notes |
+| Route | Design screen | Notes |
 |---|---|---|
-| `/` | Home | split hero with the featured figure and neon sign, perks, category tiles, new this week, gacha corner |
-| `/shop`, `/shop/:category`, `/preorders` | Listing | filters (category on All products, in stock, price), sort, active-filter chips, mobile filter toggle |
-| `/search?q=` | Search | big field, popular chips, highlighted matches, trending when empty |
-| `/p/:slug` | Product | 360 viewer + views, sticky buy box, fact grid, option chips/swatches, quantity, sticky section tabs, description, story, specs and box, size guide, delivery, reviews, "Goes well with", mobile sticky buy bar |
-| `/cart` | Cart | lines with stepper, remove, save for later; summary with free-delivery bar and trust list |
-| `/checkout` | Checkout | 1 delivery, 2 payment; inline validation on blur, error summary on submit; order summary with promo |
-| `/checkout/done`, `/checkout/result` | Confirmation | tick, order number, timeline, what to have ready; payment result and retry for online methods |
-| `/sign-in` | Sign in | phone, then 6-digit code (auto-submits) |
-| `/account`, `/account/orders`, `/account/wishlist`, `/account/addresses` | Profile | side nav with counts |
-| `/orders/:orderNumber`, `/track`, `/help` | (new, same parts) | email links point to the first two; footer help links to the third |
+| `/` | Main / DesktopHome | drop hero (新学期), trust strip, category tiles with Apparel as coming soon, New in, characters, the set feature, school bags (phone), commute story |
+| `/shop`, `/shop/:category`, `/characters/:character`, `/sets`, `/preorders` | Shop / DesktopShop | phone: character chips, "Filter and sort" sheet, 2/1 grid; desktop: filter bar of dropdowns (character, facet groups, price, in stock, sort, 3/4); the set card after the first row; "Showing X of Y" with Load more; filters in the URL |
+| `/shop/apparel` (coming soon) | (home tile) | early-access page with "Get first access" |
+| `/characters` | (home strip) | every character with its count |
+| `/search?q=` | Search / DesktopSearch | suggestions from characters and categories, popular and recent searches, marked matches, "New this week" when empty |
+| `/p/:slug` | Product / DesktopProduct | phone: one-at-a-time gallery (360 first), arrows, dots, thumbs, sticky add-to-bag bar; desktop: 360 across, four stills, sticky aside; buy box with swatches, quantity, heart, notes, facts, "Complete the set"; accordions; "You may also like" |
+| bag drawer, `/cart` | Cart / DesktopCart | full screen on phone, 460px drawer on desktop; free-delivery bar, lines, one add-on (swap into a set, or reach free delivery), totals |
+| `/checkout` | Checkout / DesktopCheckout | phone: collapsible summary, progress, sticky place-order; desktop: two numbered panels and a sticky summary; Inside/Outside Dhaka choice |
+| `/checkout/done`, `/checkout/result` | Done / DesktopDone | ありがとう, progress (list on phone, bars on desktop), what to have ready, account offer, "Complete the school kit" |
+| `/sign-in` | SignIn / DesktopSignIn | おかえり hero, phone then six code boxes (paste and SMS autofill fill all six); desktop split screen |
+| `/account`, `/account/wishlist`, `/account/addresses`, `/account/details` | Account / DesktopAccount | phone tabs, desktop side nav; orders first: open orders with the four-bar progress, finished ones with Buy again and Write a review |
+| `/orders/:orderNumber`, `/track`, `/help` | (no screen; same parts) | email links point to the first two |
 
-## 360 viewer
+## Product art
 
-`src/features/product/viewer/`. With `spinFrames` from the API it shows the photo nearest the angle (36 frames, one
-every 10°, is the target). Without frames it draws the prototype's stand-in turntable render (`standIn.ts`), so the
-demo catalog looks exactly like the prototype until real photos exist. Cards, tiles and cart thumbnails use
-`thumbnailUrl` when set, else the same stand-in at a fixed angle.
+Until real photos exist, every picture is the canvas's product-art component, ported as `ProductArt`
+(`src/features/art/`): a bottle, backpack, sling, tee or the backpack-and-bottle set, with the fox, cat, ronin or pins
+print. `artFor()` picks it by product slug, then character, then category; a colour swatch recolours the body.
+`ProductImage` shows the photo when the API has one and falls back to the art if it fails to load. On the product page,
+`spinFrames` (36, one every 10°) drive the 360 when present; otherwise the art narrows and flips as it turns.
 
-## Deviations from the prototype
+## Deviations from the design
 
-Each one keeps the layout and follows the honesty principle; the backend items are in `docs/BACKEND_REQUESTS.md`.
-
-| Prototype | Build | Why |
+| Design | Build | Why |
 |---|---|---|
-| Sort "featured" and "newest" | "Newest", price both ways, name | the API has no featured order; two identical options would mislead |
-| Sold out: "Notify me", "We will text you" | "Save to wishlist" | no back-in-stock alerts yet |
-| "Continue with Google" | not shown | no Google sign-in on the backend |
-| Prototype note "any 6 digits work" | code from SMS (development: backend log) | real OTP |
-| Gacha: draws a prize that "ships with your next order" | same capsule and draw, labelled a practice turn | no gacha on the backend yet (roadmap 4.6) |
-| Order actions "Call the rider", "Return an item" | "Track", "Cancel order" (while placed), "Write a review" (delivered) | no rider contact or returns API |
-| Confirmation "sent the details by SMS" | "emailed the details" when an email was given | the backend sends email, not SMS |
-| Photo thumbnails (Front, Back, Detail, In hand) as labelled slots | the product's real photos; only 360° when there are none | real data |
-| "XL is sold out. Restock expected in 2 weeks." | "XL is sold out." | no restock dates in the API |
-| Search, empty: "Trending this week" | "New this week" | the API has no popularity order; the list is the newest products |
-| Photos that fail to load | the stand-in render | a card never shows a broken image |
-| Pre-order: "Reserve for ৳ 1,000", "Pay ৳ 1,000 now, the rest on delivery" | "Reserve it", "arrives January 2027" | the deposit is informational today (backend PLAN §7 Q1); nothing is charged at reserve time with cash on delivery |
-| Quantity up to 5 (pre-orders 3) | up to 10, or the stock left while low | the backend's per-item limit |
-| Viewer `role=img` | `role=slider` with the angle as its value | it takes arrow keys, so screen readers should hear a control |
-| Reviews: average and count | plus a 5-to-1 star distribution | the API sends it; it helps judge a small number of reviews |
-| Confirmation timeline "Packed: today, before 6 pm", "With the rider: tomorrow" | the order's real history; next steps say "Next" / "Coming up", delivery uses the API's estimate | no dispatch times in the API |
-| bKash: "we send a payment request to your number" | "You approve the payment on bKash's page next" | the integration redirects to the provider's page |
-| Pre-order note "only its deposit is charged now" | names each pre-order and its arrival month | deposits are informational (backend PLAN §7 Q1) |
-| Account head: name, phone, sign out | plus "Edit details" (name, receipt email) | the API supports it and receipts need the email |
-| Wishlist page for guests | sign in first (hearts are kept and merged) | as the prototype: the profile pages ask to sign in |
-| Sample reviews and sample orders | the shopper's real reviews and orders | real data |
+| Sample data (Nusrat's orders, review stars) | the shopper's real data | real data |
+| Reviews link "★★★★★ Reviews" | the real average and count once there are reviews | honest |
+| Bag add-on "Add the Kitsune backpack, set price with your bottle" | "Swap for the set and save ৳ X" (adds the set, takes one of the part out) | the set is its own product; adding the part alone would not get the set price |
+| Bag add-on "Ronin sling bag" | the related product that reaches free delivery for the least | real data |
+| Promo code "Apply" | says the code is not active | no promo codes yet (backend 4.3) |
+| Payment "Card" | shown only when the backend enables it | methods come from `delivery-options` |
+| Account "Have ready ৳ 2,410" | the order total ("Have ready" for cash, "Total" otherwise) | the order list has no amount due (backend request 5) |
+| Bag stock "Only 4 left" | "Only a few left" | the quote has no stock count (backend request 4) |
+| Account tabs: Orders, Wishlist, Addresses (phone) | plus Details | the desktop design has it; phones need it too |
+| Sign-in "Close" goes home | the same | as designed |
+| Desktop done sign 76px | 50px | 76px clips inside the hero at real copy lengths |

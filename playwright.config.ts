@@ -7,6 +7,8 @@ import { defineConfig } from '@playwright/test'
  * - E2E_APP_LOG: the backend's log file; the sign-in test reads the "[DEV SMS - not sent]" code from it (skipped
  *   without it).
  * - PW_CHANNEL=chrome: use the installed Chrome instead of Playwright's Chromium.
+ * - The online-payment test follows the fake provider back to the backend's PAYMENT_RETURN_URL (default
+ *   http://localhost:5173/checkout/result), so keep `npm run dev` running on 5173 too, or point that URL at 5174.
  * Each run places real orders in that database; use a development database only.
  */
 export default defineConfig({

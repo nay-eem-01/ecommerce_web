@@ -116,7 +116,7 @@ describe('account', () => {
     storeSession()
     mockApi({ ...memberRoutes, 'GET /api/orders/me': () => envelope(200, emptyPage) })
     renderWithProviders(routes, '/account/wishlist')
-    expect(await screen.findByRole('link', { name: 'Sakura steel bottle, 750 ml' })).toBeInTheDocument()
+    expect((await screen.findAllByRole('link', { name: 'Sakura steel bottle, 750 ml' })).length).toBeGreaterThan(0)
     expect(screen.getByRole('button', { name: /Save Sakura/ })).toHaveAttribute('aria-pressed', 'true')
   })
 

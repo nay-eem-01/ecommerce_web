@@ -7,7 +7,7 @@ export function Footer() {
   const shop = (categories.data ?? []).filter((c) => !c.comingSoon)
   return (
     <footer className="ftr" style={{ marginTop: 'auto' }}>
-      <div className="page" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 24, padding: 0, width: '100%' }}>
+      <div className="page" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 24 }}>
         <div>
           <Link className="mark" to="/" style={{ fontSize: 22 }}>
             senpai<span>.</span>supply

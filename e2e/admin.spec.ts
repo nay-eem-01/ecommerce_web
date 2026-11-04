@@ -49,3 +49,18 @@ test('staff sign in, see the dashboard and pack an order', async ({ page, reques
   await expect(page.getByRole('button', { name: 'Hand to rider' })).toBeVisible()
   await expect(page.getByText('Packed by the e2e test')).toBeVisible()
 })
+
+/** Regression: on a phone the admin grid grew to the product table's width and its Edit buttons fell off-screen. */
+test('on a phone the product table scrolls in its panel and Edit opens the editor', async ({ page }) => {
+  test.skip(!PASSWORD, 'Set E2E_ADMIN_PASSWORD to the admin password (after its first change).')
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/admin/sign-in?back=/admin/products')
+  await page.getByLabel('Email').fill(EMAIL)
+  await page.getByLabel('Password').fill(PASSWORD!)
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  const main = page.locator('main.adm-main')
+  await expect(page.getByRole('heading', { name: 'Products' })).toBeVisible()
+  expect((await main.boundingBox())!.width).toBeLessThanOrEqual(390)
+  await page.getByRole('link', { name: /^Edit / }).first().click()
+  await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible()
+})

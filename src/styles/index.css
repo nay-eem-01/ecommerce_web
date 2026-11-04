@@ -780,7 +780,7 @@ img { max-width: 100%; }
 .app p.price { font-weight: 800; }
 
 /* ---------- admin (staff area: same tokens, denser and plainer than the shop) ---------- */
-.adm { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; }
+.adm { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; grid-template-columns: minmax(0, 1fr); } /* a wide table scrolls in its panel, never widens the page */
 .adm-top { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--night-2); position: sticky; top: 0; z-index: 5; flex-wrap: wrap; }
 .adm-top .mark { margin-right: auto; }
 .adm-nav { display: flex; gap: 4px; overflow-x: auto; }

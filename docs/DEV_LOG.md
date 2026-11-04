@@ -12,8 +12,9 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
   `feat/v2-home` → v2.3 `feat/v2-listing` → v2.4 `feat/v2-product` → v2.5 `feat/v2-bag-checkout` → v2.6
   `feat/v2-account` → v2.7 `chore/v2-e2e-docs`, stacked, each one building, linting and passing its tests.
 - It needs the backend's `feat/catalog-v2-base` (characters, facets, sets, early access, v2 demo catalog).
-- **Phase 4 admin (4.1 to 4.4) is done** on `claude/ecstatic-wozniak-r0uwbi`, rebuilt on `feat/storefront-v2-base`,
-  against the backend's insights API on its branch of the same name.
+- **Phase 4 admin 4.1 to 4.4 is merged** into `feat/storefront-v2-base`. **4.5, the product editor**, is on
+  `claude/ecstatic-wozniak-r0uwbi` (restarted from that base), against the backend branch of the same name (uploads,
+  edit view, field errors). Next: 4.6 categories and characters, 4.7 users and reviews.
 
 ## Next up
 
@@ -32,6 +33,38 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
   running beside `npm run e2e`.
 
 ---
+
+## 2026-11-04: Product editor with image uploads (Phase 4, step 4.5)
+
+Design and plan in the backend repository: `docs/superpowers/specs/2026-11-04-admin-catalog-editor-design.md`,
+`docs/superpowers/plans/2026-11-04-admin-catalog-editor.md`.
+
+**Done**
+- `/admin/products/new` and `/admin/products/:id`: one page for the whole product (basics with a slug suggested from
+  the name, price and pre-order, options with stock and swatch, images, description and story, facts, in the box,
+  filters as "Group: Value" lines, set contents, status), saved at once; Archive with a confirmation.
+- Loaded from `GET /api/admin/products/{id}/edit` and saved as the same document, so a save changes only what was
+  edited (tested: the PUT body equals the loaded document plus the one edit).
+- Images: many files at once, at most 3 uploading at a time, each in its own slot; a failed one keeps its place
+  with the backend's message and a Retry; 360 frames ordered by file name (`frame-2` before `frame-10`); reorder by
+  drag or the move buttons; alt text. Save waits for running uploads.
+- Field errors beside their field and focused: numbers are checked before sending, and the backend now names the
+  field (`payload.field`, e.g. `options[1].stock`; `slug` on a clash).
+- Unsaved changes ask before leaving: tab close, any in-app link (caught in the capture phase, since BrowserRouter
+  has no blocker), Cancel.
+- Products page: "New product", "Edit" per row, and a "Not on sale" list (drafts and archived are not in the
+  insights table). Dev proxy forwards `/uploads` to the backend.
+- 14 new unit and screen tests (138 in all); Playwright admin tests pass against the backend. Checked in a real
+  browser: a 3000×2000 PNG uploaded through the editor shows on the product page as a 2 400 px WebP.
+
+**Bugs found and fixed**
+- On phones the admin page grew to the product table's width (about 1080 px) and the Edit and Stock buttons were
+  off-screen and unreachable (since 4.3). The admin grid column is `minmax(0, 1fr)`; Playwright regression test at
+  390 px, which fails without the fix.
+- Option and fact rows stacked every field: `repeat(auto-fit, …) auto` is not a valid grid template; flex rows now.
+
+**Known limitations**
+- Admin nav links are guarded; browser back/forward with unsaved edits is not.
 
 ## 2026-11-04: Admin dashboard (Phase 4, steps 4.1 to 4.4)
 

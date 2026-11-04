@@ -488,3 +488,29 @@ export interface ProductEdit extends Omit<ProductRequestBody, 'options'> {
   id: number
   options: Array<{ id: number; value: string; priceDelta: number; stock: number; swatch: string | null }>
 }
+
+export type UserStatus = 'ACTIVE' | 'BANNED'
+
+export interface AdminUser {
+  id: number
+  name: string | null
+  phone: string | null
+  email: string | null
+  status: UserStatus
+  roles: string[]
+  creationDate: string
+}
+
+export type ReviewStatus = 'PUBLISHED' | 'HIDDEN'
+
+/** A review for moderation: display name only, no contact details. */
+export interface AdminReview {
+  id: number
+  productId: number
+  productName: string | null
+  authorName: string
+  rating: number
+  body: string
+  status: ReviewStatus
+  createdAt: string
+}

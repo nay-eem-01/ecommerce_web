@@ -2,6 +2,8 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { api } from './client'
 import { ApiError } from './errors'
 import type {
+  AdminReview,
+  AdminUser,
   BreakdownBy,
   Category,
   Character,
@@ -18,12 +20,14 @@ import type {
   ProductRequestBody,
   ProductStatus,
   ProductSummary,
+  ReviewStatus,
   ProductInsight,
   ProductStock,
   ProductInsightSort,
   Searches,
   Signal,
   TokenResponse,
+  UserStatus,
 } from './types'
 
 /** Staff sign-in with email and password. */
@@ -192,6 +196,43 @@ export function useAdminProductList(status: ProductStatus | '') {
   return useQuery({
     queryKey: ['admin', 'catalog', 'products', status],
     queryFn: () => api<Page<ProductSummary>>('/api/admin/products', { params: { status, pageSize: 100, sortBy: 'name', ascOrDesc: 'asc' } }),
+  })
+}
+
+// ---------- people ----------
+
+export function useAdminUsers(q: string, pageNo: number) {
+  return useQuery({
+    queryKey: ['admin', 'users', q, pageNo],
+    queryFn: () => api<Page<AdminUser>>('/api/admin/users', { params: { q, pageNo, pageSize: 20 } }),
+    placeholderData: keepPreviousData,
+  })
+}
+
+/** Ban or allow back; the backend refuses banning your own account. */
+export function useSetUserStatus() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, status }: { id: number; status: UserStatus }) =>
+      api<AdminUser>(`/api/admin/users/${id}/status`, { method: 'PUT', body: { status } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+}
+
+export function useAdminReviews(status: ReviewStatus | '', pageNo: number) {
+  return useQuery({
+    queryKey: ['admin', 'reviews', status, pageNo],
+    queryFn: () => api<Page<AdminReview>>('/api/admin/reviews', { params: { status, pageNo, pageSize: 20 } }),
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function useSetReviewStatus() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, status }: { id: number; status: ReviewStatus }) =>
+      api<null>(`/api/admin/reviews/${id}/status`, { method: 'PATCH', body: { status } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'reviews'] }),
   })
 }
 

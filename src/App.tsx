@@ -35,6 +35,7 @@ const AdminLayout = page(() => import('./features/admin/AdminLayout'), 'AdminLay
 const DashboardPage = page(() => import('./features/admin/DashboardPage'), 'DashboardPage')
 const AdminProductsPage = page(() => import('./features/admin/ProductsPage'), 'ProductsPage')
 const ProductEditorPage = page(() => import('./features/admin/editor/ProductEditorPage'), 'ProductEditorPage')
+const CatalogPage = page(() => import('./features/admin/CatalogPage'), 'CatalogPage')
 const AdminOrdersPage = page(() => import('./features/admin/OrdersPage'), 'OrdersPage')
 const AdminOrderPage = page(() => import('./features/admin/AdminOrderPage'), 'AdminOrderPage')
 
@@ -86,6 +87,7 @@ function AdminRoutes() {
           <Route path="products" element={<AdminProductsPage />} />
           <Route path="products/new" element={<ProductEditorPage />} />
           <Route path="products/:id" element={<ProductEditorPage />} />
+          <Route path="catalog" element={<CatalogPage />} />
           <Route path="orders" element={<AdminOrdersPage />} />
           <Route path="orders/:orderNumber" element={<AdminOrderPage />} />
         </Route>

@@ -153,6 +153,40 @@ export function useAdminCharacters() {
   return useQuery({ queryKey: ['admin', 'catalog', 'characters'], queryFn: () => api<Character[]>('/api/admin/characters') })
 }
 
+/** A category or character as the admin form sends it (`comingSoon` is for categories only). */
+export interface CollectionBody {
+  slug: string
+  name: string
+  label: string | null
+  blurb: string | null
+  sortOrder: number
+  active: boolean
+  comingSoon?: boolean
+}
+
+export type CollectionKind = 'categories' | 'characters'
+
+/** Create (no id) or edit a category or character. */
+export function useSaveCollection(kind: CollectionKind) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, body }: { id: number | null; body: CollectionBody }) =>
+      id === null
+        ? api<unknown>(`/api/admin/${kind}`, { method: 'POST', body })
+        : api<unknown>(`/api/admin/${kind}/${id}`, { method: 'PUT', body }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'catalog', kind] }),
+  })
+}
+
+/** 409 while products still use it; the backend's message says so. */
+export function useDeleteCollection(kind: CollectionKind) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api<null>(`/api/admin/${kind}/${id}`, { method: 'DELETE' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'catalog', kind] }),
+  })
+}
+
 /** Products of one status (drafts, archived) or all, for lists outside the insights table and for set contents. */
 export function useAdminProductList(status: ProductStatus | '') {
   return useQuery({

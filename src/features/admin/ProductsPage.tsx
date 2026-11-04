@@ -122,6 +122,7 @@ export function ProductsPage() {
 }
 
 /** Drafts and archived products, which the insights table (products on sale) does not list. */
+// shortcut: the first 100 of each by name; page this list once there are more.
 function NotOnSale() {
   const drafts = useAdminProductList('DRAFT')
   const archived = useAdminProductList('ARCHIVED')

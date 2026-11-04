@@ -142,7 +142,8 @@ describe('product editor', () => {
     const photos = await screen.findByRole('group', { name: 'Photos' })
     await user.upload(within(photos).getByLabelText(/Add images/), [png('a.png'), png('b.png'), png('c.png')])
     expect(await within(photos).findByRole('alert')).toHaveTextContent('b.png: That image could not be read.')
-    // while one is failed the save leaves it out; saving is allowed
+    // while one is failed the save leaves it out, says so next to Save, and saving is allowed
+    expect(screen.getByText(/1 image failed and will not be saved/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeEnabled()
     await user.click(within(photos).getByRole('button', { name: 'Retry' }))
     await waitFor(() => expect(within(photos).queryByRole('alert')).not.toBeInTheDocument())

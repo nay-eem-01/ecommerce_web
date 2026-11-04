@@ -45,6 +45,7 @@ function Editor({ id, initial }: { id: number | null; initial: ProductForm }) {
   useTitle(id === null ? 'New product' : `Edit ${initial.name}`)
 
   const uploading = Object.values(form.images).some((list) => list.some((i) => i.status === 'queued' || i.status === 'uploading'))
+  const failed = Object.values(form.images).reduce((n, list) => n + list.filter((i) => i.status === 'failed').length, 0)
   const dirty = JSON.stringify(toRequest(form)) !== saved || uploading
   useLeaveGuard(dirty)
 
@@ -124,6 +125,7 @@ function Editor({ id, initial }: { id: number | null; initial: ProductForm }) {
       onChange={(e) => set(path, e.target.value as never)} {...props} />
   )
 
+  // shortcut: the first 100 products by name; page or search the picker once the catalog outgrows that.
   const setCandidates = (allProducts.data?.content ?? []).filter((p) => !p.set && p.id !== id)
 
   return (
@@ -279,6 +281,11 @@ function Editor({ id, initial }: { id: number | null; initial: ProductForm }) {
         </button>
         {uploading && <span className="muted" style={{ fontSize: 13 }}>Waiting for images to finish uploading…</span>}
         {!uploading && dirty && <span className="muted" style={{ fontSize: 13 }}>Unsaved changes</span>}
+        {failed > 0 && (
+          <span className="err">
+            {failed === 1 ? '1 image failed and will not be saved. Retry or remove it.' : `${failed} images failed and will not be saved. Retry or remove them.`}
+          </span>
+        )}
         {notice && <span className="okmsg" role="status">{notice}</span>}
         <span style={{ flex: 1 }} />
         <button type="button" className="tbtn" onClick={() => { if (!dirty || window.confirm(LEAVE_MESSAGE)) { setSaved(JSON.stringify(toRequest(form))); navigate('/admin/products') } }}>

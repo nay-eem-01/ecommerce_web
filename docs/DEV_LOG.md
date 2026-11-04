@@ -12,14 +12,18 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
   `feat/v2-home` → v2.3 `feat/v2-listing` → v2.4 `feat/v2-product` → v2.5 `feat/v2-bag-checkout` → v2.6
   `feat/v2-account` → v2.7 `chore/v2-e2e-docs`, stacked, each one building, linting and passing its tests.
 - It needs the backend's `feat/catalog-v2-base` (characters, facets, sets, early access, v2 demo catalog).
+- **Phase 4 admin (4.1 to 4.4) is done** on `claude/ecstatic-wozniak-r0uwbi`, rebuilt on `feat/storefront-v2-base`,
+  against the backend's insights API on its branch of the same name.
 
 ## Next up
 
 1. **Nayeem:** merge the backend v2 PRs first, then PR the v2 steps in order into `feat/storefront-v2-base`, then the
    base into `development` (see the PR order in the session notes / below).
-2. **Backend:** `docs/BACKEND_REQUESTS.md`, first the refresh-token grace window, then `stockLeft` on quote lines and
+2. **Nayeem:** then PR the admin branch `claude/ecstatic-wozniak-r0uwbi` (it sits on `feat/storefront-v2-base`) and
+   the backend's insights branch of the same name.
+3. **Backend:** `docs/BACKEND_REQUESTS.md`, first the refresh-token grace window, then `stockLeft` on quote lines and
    the amount due on the order list.
-3. Real product photos and 36-frame turntables replace the product art as they are shot.
+4. Real product photos and 36-frame turntables replace the product art as they are shot.
 
 ## Open items
 
@@ -28,6 +32,37 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
   running beside `npm run e2e`.
 
 ---
+
+## 2026-11-04: Admin dashboard (Phase 4, steps 4.1 to 4.4)
+
+**Done**
+- `/admin/*` in its own lazy chunks and frame: staff sign-in (email + password), the first-time password change
+  (the backend ends every session, so it signs in again), `RequireAdmin` (no ADMIN role: staff sign-in with "no staff
+  access"; `mustChangePassword`: the password screen only). The backend checks every privilege regardless.
+- Dashboard: 7/30/90 days or a range (in the URL, Dhaka days); eight totals against the previous period (a fall in
+  cancellations shows as good); "What to act on" signals linking to the product row; revenue per day (one-series SVG
+  bars, hover read-out, a table view); sales by category, character, district or payment; searches that found nothing
+  and the most searched.
+- Products: every active product with stock, days left, views, conversion, sold, revenue, saved and in-cart counts and
+  its signals; sort by any column (`aria-sort`); exact stock editor per option (`GET /api/admin/products/{id}/stock`,
+  added to the backend for this).
+- Orders: list with status filter, number or phone search and paging; detail with items, totals, address, history
+  and only the moves the state machine allows; cancel and return ask first; the backend's 409 message is shown.
+- 19 screen and unit tests; `e2e/admin.spec.ts` (needs `E2E_ADMIN_PASSWORD`) places a cash order through the API,
+  signs in as staff, opens the dashboard and products, and packs the order. All six Playwright tests pass against
+  the backend on a fresh development database.
+
+**Bugs found and fixed**
+- Real data showed a 300% conversion (orders placed without a counted view); the backend now returns no rate when
+  orders outnumber views.
+- The password change lost its "sign in again" notice: React Router 7 navigates in a transition, so the guard saw the
+  sign-out first. The sign-in page now ends the session state after arriving.
+- A status move retried after its first attempt went through (lost response) showed the state machine's 409 although
+  the order had moved; on 409 the order is reloaded and a move that already happened counts as done.
+- `shop.spec.ts` sort check was flaky (read the cards before the re-sorted page arrived); it polls now.
+
+**Known limitations**
+- Admin screens are dark only, like the shop. No product create/edit form yet (4.5); use Swagger meanwhile.
 
 ## 2026-11-03: The v2 design on every screen (phase 2v)
 

@@ -778,3 +778,53 @@ img { max-width: 100%; }
 @media (max-width: 899px) { .si-guest { border: 0; padding: 0; align-items: center; } }
 .app .ocard-id { font-weight: 800; }
 .app p.price { font-weight: 800; }
+
+/* ---------- admin (staff area: same tokens, denser and plainer than the shop) ---------- */
+.adm { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; }
+.adm-top { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--night-2); position: sticky; top: 0; z-index: 5; flex-wrap: wrap; }
+.adm-top .mark { margin-right: auto; }
+.adm-nav { display: flex; gap: 4px; overflow-x: auto; }
+.adm-nav a { min-height: 40px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 4px; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
+.adm-nav a[aria-current="page"] { background: var(--text); color: var(--night); }
+.adm-main { padding: 20px 16px 48px; width: 100%; max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.adm-h1 { font-family: var(--display); font-size: 26px; line-height: 1.15; }
+.adm-head { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; justify-content: space-between; }
+.adm-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.adm-tile { padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.adm-tile .v { font-family: var(--display); font-size: 24px; font-variant-numeric: tabular-nums; }
+.adm-tile .d { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.adm-tile .d.up { color: var(--ok); }
+.adm-tile .d.down { color: var(--bad); }
+.adm-card { padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.adm-card h2 { font-family: var(--display); font-size: 18px; }
+.adm-grid { display: grid; gap: 20px; }
+.adm-table-wrap { overflow-x: auto; }
+.adm-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.adm-table th, .adm-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.adm-table th { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.adm-table td.num, .adm-table th.num { text-align: right; }
+.adm-table th button { all: unset; cursor: pointer; display: inline-flex; gap: 4px; align-items: center; min-height: 32px; }
+.adm-table th button:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.adm-table tr.hl td { background: oklch(74% 0.19 352 / .12); }
+.adm-signals { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.adm-signals li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.adm-signals li .tag { align-self: start; margin-top: 2px; }
+.adm-signals li p { color: var(--text-2); }
+.adm-bars { display: flex; flex-direction: column; gap: 8px; }
+.adm-bar { display: grid; grid-template-columns: minmax(90px, 30%) minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 13px; font-variant-numeric: tabular-nums; }
+.adm-bar i { display: block; height: 10px; border-radius: 2px; background: var(--pink); }
+.adm-chart { width: 100%; height: auto; display: block; }
+.adm-chart text { fill: var(--muted); font-size: 18px; font-family: var(--body); } /* viewBox units: about 12px on screen */
+.adm-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.adm-filters .input { min-height: 40px; width: auto; font-size: 14px; }
+.adm-form { display: flex; flex-direction: column; gap: 14px; width: min(420px, 100%); margin: 48px auto; padding: 24px; }
+.adm-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.adm-actions .btn { min-height: 42px; padding: 0 16px; }
+.adm-two { display: grid; gap: 20px; }
+@media (min-width: 900px) {
+  .adm-top { padding: 12px 40px; }
+  .adm-main { padding: 28px 40px 64px; }
+  .adm-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .adm-grid { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+  .adm-two { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+}

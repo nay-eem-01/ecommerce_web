@@ -335,3 +335,117 @@ export interface LineInput {
   optionId: number | null
   quantity: number
 }
+
+// ---------- admin (staff only; the backend checks every privilege) ----------
+
+/** A period of shop days, ISO dates, both inclusive. */
+export interface Period {
+  from: string
+  to: string
+}
+
+export interface InsightTotals {
+  orders: number
+  units: number
+  revenue: number
+  averageOrder: number | null
+  deliveryFees: number
+  cancelled: number
+  /** 0 to 1. */
+  cancelRate: number
+  returned: number
+  newBuyers: number
+  returningBuyers: number
+  views: number
+  searches: number
+  zeroResultSearches: number
+}
+
+export interface DailySales {
+  day: string
+  orders: number
+  revenue: number
+}
+
+export interface Overview {
+  from: string
+  to: string
+  current: InsightTotals
+  previous: InsightTotals
+  daily: DailySales[]
+}
+
+export type SignalType =
+  | 'RESTOCK_SOON'
+  | 'WANTED_SOLD_OUT'
+  | 'LOW_STOCK_HIGH_DEMAND'
+  | 'LOOKED_NOT_BOUGHT'
+  | 'SLOW_MOVER'
+  | 'SEARCH_GAP'
+  | 'COMING_SOON_DEMAND'
+
+export interface ProductInsight {
+  id: number
+  slug: string
+  name: string
+  category: string
+  character: string | null
+  preorder: boolean
+  stock: number
+  views: number
+  orders: number
+  units: number
+  revenue: number
+  /** orders / views, 0 to 1; null without views or when orders outnumber views. */
+  conversion: number | null
+  wishlists: number
+  cartUnits: number
+  cartMembers: number
+  /** null when nothing sold in the period. */
+  daysLeft: number | null
+  signals: SignalType[]
+}
+
+export interface Signal {
+  type: SignalType
+  title: string
+  reason: string
+  productId: number | null
+  productSlug: string | null
+  term: string | null
+  categorySlug: string | null
+  value: number
+}
+
+export type BreakdownBy = 'CATEGORY' | 'CHARACTER' | 'DISTRICT' | 'PAYMENT_METHOD'
+
+export interface BreakdownRow {
+  name: string
+  orders: number
+  units: number
+  revenue: number
+  /** 0 to 1. */
+  share: number
+}
+
+export interface SearchTerm {
+  term: string
+  searches: number
+  zeroResults: number
+}
+
+export interface Searches {
+  top: SearchTerm[]
+  zeroResults: SearchTerm[]
+}
+
+export type ProductInsightSort = 'revenue' | 'units' | 'views' | 'conversion' | 'wishlists' | 'daysLeft' | 'stock'
+
+/** Exact stock (staff only); a product with options sells from each option. */
+export interface ProductStock {
+  productId: number
+  stock: number
+  options: Array<{ id: number; value: string; stock: number }>
+}
+
+export type OrderAction = 'PACK' | 'SHIP' | 'DELIVER' | 'CANCEL' | 'RETURN'

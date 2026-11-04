@@ -1,4 +1,4 @@
-import { lazy, type ComponentType } from 'react'
+import { lazy, Suspense, type ComponentType } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { RequireAuth } from './features/auth/RequireAuth'
 import { CartPage } from './features/cart/Bag'
@@ -6,7 +6,7 @@ import { CharactersPage } from './features/catalog/CharactersPage'
 import { ListingPage } from './features/catalog/ListingPage'
 import { NotFoundPage } from './features/errors/NotFoundPage'
 import { HomePage } from './features/home/HomePage'
-import { AppLayout } from './layout/AppLayout'
+import { AppLayout, PageLoading } from './layout/AppLayout'
 
 // Home and the listings load with the app (most visits start there); other pages are fetched when first opened.
 // AppLayout's Suspense shows a spinner meanwhile.
@@ -27,10 +27,20 @@ const OrdersPage = page(() => import('./features/account/AccountPages'), 'Orders
 const WishlistPage = page(() => import('./features/account/AccountPages'), 'WishlistPage')
 const AddressesPage = page(() => import('./features/account/AccountPages'), 'AddressesPage')
 const ProductPage = page(() => import('./features/product/ProductPage'), 'ProductPage')
+// Staff area: its own chunks, never loaded by shoppers.
+const AdminSignInPage = page(() => import('./features/admin/AdminSignInPage'), 'AdminSignInPage')
+const ChangePasswordPage = page(() => import('./features/admin/ChangePasswordPage'), 'ChangePasswordPage')
+const RequireAdmin = page(() => import('./features/admin/RequireAdmin'), 'RequireAdmin')
+const AdminLayout = page(() => import('./features/admin/AdminLayout'), 'AdminLayout')
+const DashboardPage = page(() => import('./features/admin/DashboardPage'), 'DashboardPage')
+const AdminProductsPage = page(() => import('./features/admin/ProductsPage'), 'ProductsPage')
+const AdminOrdersPage = page(() => import('./features/admin/OrdersPage'), 'OrdersPage')
+const AdminOrderPage = page(() => import('./features/admin/AdminOrderPage'), 'AdminOrderPage')
 
 export default function App() {
   return (
     <Routes>
+      <Route path="/admin/*" element={<Suspense fallback={<PageLoading />}><AdminRoutes /></Suspense>} />
       <Route element={<AppLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/shop" element={<ListingPage mode="all" />} />
@@ -60,6 +70,24 @@ export default function App() {
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>
+    </Routes>
+  )
+}
+
+function AdminRoutes() {
+  return (
+    <Routes>
+      <Route path="sign-in" element={<AdminSignInPage />} />
+      <Route element={<RequireAdmin />}>
+        <Route path="password" element={<ChangePasswordPage />} />
+        <Route element={<AdminLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="products" element={<AdminProductsPage />} />
+          <Route path="orders" element={<AdminOrdersPage />} />
+          <Route path="orders/:orderNumber" element={<AdminOrderPage />} />
+        </Route>
+      </Route>
+      <Route path="*" element={<Navigate to="/admin" replace />} />
     </Routes>
   )
 }

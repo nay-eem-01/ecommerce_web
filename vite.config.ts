@@ -20,6 +20,8 @@ export default defineConfig({
           proxy.on('proxyReq', (proxyReq) => proxyReq.removeHeader('origin'))
         },
       },
+      // development image storage (production serves images from S3 / the CDN)
+      '/uploads': { target: apiTarget },
     },
   },
   test: {

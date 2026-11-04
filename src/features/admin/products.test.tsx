@@ -1,7 +1,8 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
-import { bodyOf, envelope, mockApi } from '../../test/api'
+import { bodyOf, envelope, mockApi, page } from '../../test/api'
+import { summary } from '../../test/fixtures'
 import { renderWithProviders, storeSession } from '../../test/render'
 import { adminSession, insight } from './fixtures'
 import { ProductsPage } from './ProductsPage'
@@ -71,5 +72,20 @@ describe('admin products', () => {
     await user.type(pink, '3')
     await user.click(screen.getByRole('button', { name: 'Save stock' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Option not found.')
+  })
+
+  it('links each row to the editor and lists drafts and archived products apart', async () => {
+    mockApi({
+      ...adminSession,
+      'GET /api/admin/insights/products': () => envelope(200, rows),
+      'GET /api/admin/products': (url) =>
+        envelope(200, page(url.searchParams.get('status') === 'DRAFT' ? [summary({ id: 12, name: 'Ronin sling bag draft' })] : [])),
+    })
+    renderWithProviders(routes, '/admin/products')
+    expect(await screen.findByRole('link', { name: 'Edit Kitsune bottle' })).toHaveAttribute('href', '/admin/products/7')
+    expect(screen.getByRole('link', { name: 'New product' })).toHaveAttribute('href', '/admin/products/new')
+    const notOnSale = await screen.findByRole('region', { name: 'Not on sale' })
+    expect(within(notOnSale).getByRole('link', { name: 'Ronin sling bag draft' })).toHaveAttribute('href', '/admin/products/12')
+    expect(within(notOnSale).getByText('Draft')).toBeInTheDocument()
   })
 })

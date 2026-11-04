@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext } from '@playwright/test'
-import { freshPhone } from './helpers'
+import { freshPhone } from './helpers.ts'
 
 const EMAIL = process.env.E2E_ADMIN_EMAIL ?? 'admin@senpai.local'
 const PASSWORD = process.env.E2E_ADMIN_PASSWORD

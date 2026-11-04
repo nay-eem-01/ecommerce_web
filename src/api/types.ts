@@ -396,7 +396,7 @@ export interface ProductInsight {
   orders: number
   units: number
   revenue: number
-  /** orders / views, 0 to 1; null without views. */
+  /** orders / views, 0 to 1; null without views or when orders outnumber views. */
   conversion: number | null
   wishlists: number
   cartUnits: number

@@ -34,7 +34,7 @@ export function KpiTiles({ current, previous, days }: { current: InsightTotals; 
       current: current.averageOrder ?? 0, previous: previous.averageOrder ?? 0 },
     { label: 'Units sold', value: String(current.units), current: current.units, previous: previous.units },
     { label: 'Cancelled', value: pct(current.cancelRate), current: current.cancelRate, previous: previous.cancelRate,
-      goodWhenDown: true, sub: `${current.cancelled} orders` },
+      goodWhenDown: true, sub: `${current.cancelled} ${current.cancelled === 1 ? 'order' : 'orders'}` },
     { label: 'New buyers', value: String(current.newBuyers), current: current.newBuyers, previous: previous.newBuyers,
       sub: `${current.returningBuyers} came back` },
     { label: 'Product views', value: String(current.views), current: current.views, previous: previous.views },

@@ -67,10 +67,14 @@ test('search suggests and marks the match; the filter bar keeps to the URL', asy
   await page.getByRole('radio', { name: 'Price, low to high' }).click()
   await expect(page).toHaveURL(/sort=price-asc/)
   await expect(page.getByRole('button', { name: 'Sort: Price, low to high' })).toBeVisible()
-  const prices = await page.locator('.pcard .pprice').allInnerTexts()
-  const values = prices.map((p) => Number(p.split('৳').filter(Boolean)[0].replace(/\D/g, '')))
-  expect(values.length).toBeGreaterThan(0)
-  expect(values).toEqual([...values].sort((a, b) => a - b))
+  // The list re-sorts after the new query lands; poll instead of reading the cards once.
+  await expect
+    .poll(async () => {
+      const prices = await page.locator('.pcard .pprice').allInnerTexts()
+      const values = prices.map((p) => Number(p.split('৳').filter(Boolean)[0].replace(/\D/g, '')))
+      return values.length > 0 && values.every((v, i) => i === 0 || values[i - 1] <= v)
+    })
+    .toBe(true)
 })
 
 test('an online payment goes to the provider and back to the result page', async ({ page }) => {

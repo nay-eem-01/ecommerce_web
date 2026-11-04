@@ -5,7 +5,10 @@ import { useRequestOtp, useVerifyOtp } from '../../api/auth'
 import { errorMessage } from '../../api/errors'
 import { localDigits } from '../../lib/phone'
 import { useTitle } from '../../lib/useTitle'
-import { Icon } from '../../ui/Icon'
+import { Icon } from '../../ui/icons'
+import { CATEGORY_ART } from '../art/art'
+import { ProductArt } from '../art/ProductArt'
+import { CodeBoxes } from './CodeBoxes'
 import { useToast } from '../../ui/Toast'
 import { mergeGuestIntoAccount } from './mergeGuest'
 import { firstName, useSession } from './session'
@@ -99,128 +102,155 @@ export function SignInPage() {
 
   const wait = Math.max(0, Math.ceil((resendAt - now) / 1000))
   const fromCheckout = back === '/checkout'
+  const errorLine = (id: string, help: string) => (
+    <div id={id} aria-live="polite">
+      {error ? (
+        <span className="co-err" style={{ fontSize: 13 }}>
+          <Icon name="alert" small />
+          {error}
+        </span>
+      ) : (
+        <span className="help">{help}</span>
+      )}
+    </div>
+  )
+
+  const form =
+    step === 'phone' ? (
+      <form onSubmit={send} noValidate className="si-form">
+        <div className="field">
+          <label htmlFor="au-phone">Mobile number</label>
+          <div className="prefix">
+            <span>+88</span>
+            <input
+              className="input"
+              id="au-phone"
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel-national"
+              placeholder="01XXXXXXXXX"
+              value={phone}
+              aria-invalid={error ? true : undefined}
+              aria-describedby="au-phone-msg"
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </div>
+          {errorLine('au-phone-msg', 'We text you a 6-digit code. New here? This also creates your account.')}
+        </div>
+        <button className="btn block" type="submit" disabled={requestOtp.isPending}>
+          {requestOtp.isPending ? 'Sending…' : 'Send code'}
+        </button>
+      </form>
+    ) : (
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          verify()
+        }}
+        noValidate
+        className="si-form"
+      >
+        <p style={{ color: 'var(--text-2)' }}>
+          Enter the code we sent to <b style={{ color: 'var(--text)' }}>+88 {digits}</b>.{' '}
+          <button
+            type="button"
+            className="link"
+            style={{ border: 0, background: 'transparent', padding: 0 }}
+            onClick={() => {
+              setStep('phone')
+              setError('')
+            }}
+          >
+            Change
+          </button>
+        </p>
+        <CodeBoxes
+          ref={codeInput}
+          value={code}
+          disabled={verifyOtp.isPending}
+          invalid={!!error}
+          describedBy="au-code-msg"
+          onChange={(value) => {
+            setCode(value)
+            // The code arrives by SMS; signing in as soon as it is complete saves a tap.
+            if (value.length === 6) verify(value)
+          }}
+        />
+        {errorLine('au-code-msg', 'Signs you in as soon as all six digits are in. Code works for 5 minutes.')}
+        <button className="btn block" type="submit" disabled={verifyOtp.isPending}>
+          {verifyOtp.isPending ? 'Checking…' : 'Verify and sign in'}
+        </button>
+        <button
+          type="button"
+          className="link"
+          style={{ border: 0, background: 'transparent', padding: 0, alignSelf: 'center', ...(wait > 0 ? { color: 'var(--muted)' } : {}) }}
+          disabled={wait > 0 || requestOtp.isPending}
+          onClick={() => send()}
+        >
+          {wait > 0 ? `Send a new code in ${wait} s` : 'Send a new code'}
+        </button>
+      </form>
+    )
+
+  const guest = (
+    <Link className="link" to={fromCheckout ? '/checkout' : '/shop'} style={{ fontSize: 14 }}>
+      {fromCheckout ? 'Continue to checkout as a guest' : 'Continue as a guest'}
+    </Link>
+  )
 
   return (
-    <div className="wrap">
-      <div className="auth">
-        <div style={{ display: 'grid', gap: 8 }}>
-          <h1 className="page-title" style={{ padding: 0 }}>
-            Sign in or create an account
-          </h1>
-          <p className="muted">Track orders, save addresses and keep a wishlist.</p>
+    <div className="si">
+      <section className="hero si-hero">
+        <span className="sign" aria-hidden="true">
+          おかえり
+        </span>
+        <div className="si-art d-only" aria-hidden="true">
+          <ProductArt spec={{ ...CATEGORY_ART.bags, kind: 'set', a: '#f2a7c3', b: '#1d1838', c: '#ff5fa2', face: 'fox', eye: '#e0245e' }} />
         </div>
-        {endNotice && (
-          <div className="notice warn" role="alert">
-            {endNotice}
-          </div>
-        )}
-        <div className="panel">
-          {step === 'phone' ? (
-            <form onSubmit={send} noValidate style={{ display: 'grid', gap: 20 }}>
-              <div className="field">
-                <label htmlFor="au-phone">Mobile number</label>
-                <div className="prefix">
-                  <span>+88</span>
-                  <input
-                    className="input"
-                    id="au-phone"
-                    type="tel"
-                    inputMode="numeric"
-                    autoComplete="tel-national"
-                    placeholder="01XXXXXXXXX"
-                    value={phone}
-                    aria-invalid={error ? true : undefined}
-                    aria-describedby="au-phone-msg"
-                    onChange={(e) => setPhone(e.target.value)}
-                  />
-                </div>
-                <div id="au-phone-msg" aria-live="polite">
-                  {error ? (
-                    <span className="err">
-                      <Icon name="alert" />
-                      {error}
-                    </span>
-                  ) : (
-                    <span className="help">We text you a 6-digit code. New here? This also creates your account.</span>
-                  )}
-                </div>
-              </div>
-              <button className="btn lg block" type="submit" disabled={requestOtp.isPending}>
-                {requestOtp.isPending ? 'Sending…' : 'Send code'}
-              </button>
-            </form>
-          ) : (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                verify()
-              }}
-              noValidate
-              style={{ display: 'grid', gap: 20 }}
-            >
-              <p>
-                Enter the code we sent to <strong>+88 {digits}</strong>.{' '}
-                <button
-                  type="button"
-                  className="link"
-                  onClick={() => {
-                    setStep('phone')
-                    setError('')
-                  }}
-                >
-                  Change number
-                </button>
-              </p>
-              <div className="field">
-                <label htmlFor="au-code">6-digit code</label>
-                <input
-                  ref={codeInput}
-                  className="input otp"
-                  id="au-code"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={6}
-                  value={code}
-                  aria-invalid={error ? true : undefined}
-                  aria-describedby="au-code-msg"
-                  disabled={verifyOtp.isPending}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '').slice(0, 6)
-                    setCode(value)
-                    // The code arrives by SMS; signing in as soon as it is complete saves a tap.
-                    if (value.length === 6) verify(value)
-                  }}
-                />
-                <div id="au-code-msg" aria-live="polite">
-                  {error ? (
-                    <span className="err">
-                      <Icon name="alert" />
-                      {error}
-                    </span>
-                  ) : (
-                    <span className="help">The code works for 5 minutes.</span>
-                  )}
-                </div>
-              </div>
-              <button className="btn lg block" type="submit" disabled={verifyOtp.isPending}>
-                {verifyOtp.isPending ? 'Checking…' : 'Verify and sign in'}
-              </button>
-              <button type="button" className="link" disabled={wait > 0 || requestOtp.isPending} onClick={() => send()}>
-                {wait > 0 ? `Send a new code in ${wait} s` : 'Send a new code'}
-              </button>
-            </form>
-          )}
-        </div>
-        {fromCheckout ? (
-          <Link className="link" to="/checkout">
-            Continue to checkout as a guest
-          </Link>
-        ) : (
-          <p className="muted" style={{ fontSize: 14 }}>
-            You can also check out as a guest. An account is never required to buy.
+        <div className="scrim d-only" />
+        <div className="si-hero-copy">
+          <p className="eyebrow pink">Welcome back</p>
+          <p className="display ph-only si-hero-title" aria-hidden="true">
+            Sign in with your phone.
           </p>
-        )}
-      </div>
+          <p className="display d-only si-hero-title">Your orders, wishlist and address in one place.</p>
+        </div>
+      </section>
+      <section className="si-panel">
+        <div className="si-col">
+          <h1 className="display si-h1">Sign in with your phone</h1>
+          <p className="d-only" style={{ color: 'var(--text-2)' }}>
+            No password. New here? The same code creates your account.
+          </p>
+          {endNotice && (
+            <div className="err-summary" role="alert" style={{ borderColor: 'var(--warn)' }}>
+              {endNotice}
+            </div>
+          )}
+          {form}
+          <div className="ph-only si-perks">
+            <p className="eyebrow">With an account you can</p>
+            <p className="note">
+              <Icon name="truck" />
+              Track every order in one place
+            </p>
+            <p className="note">
+              <Icon name="heart" />
+              Keep a wishlist across phone and laptop
+            </p>
+            <p className="note">
+              <Icon name="home" />
+              Check out faster with a saved address
+            </p>
+          </div>
+          <div className="si-guest">
+            <p className="d-only" style={{ fontSize: 14, color: 'var(--text-2)' }}>
+              An account is never required to buy.
+            </p>
+            {guest}
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

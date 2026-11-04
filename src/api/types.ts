@@ -67,6 +67,33 @@ export interface Category {
   sortOrder: number
   active: boolean
   productCount: number
+  /** Announced, no products yet: the storefront offers early access. */
+  comingSoon: boolean
+}
+
+/** One of the shop's own characters; its products form a collection. */
+export interface Character {
+  id: number
+  slug: string
+  name: string
+  /** The sign on the collection tile (狐, 猫, 侍). */
+  label: string | null
+  blurb: string | null
+  sortOrder: number
+  active: boolean
+  productCount: number
+}
+
+/** A colour option as a card shows it (dots, quick add). */
+export interface Swatch {
+  optionId: number
+  value: string
+  swatch: string
+  stockState: StockState
+}
+
+export interface Facets {
+  groups: Array<{ name: string; values: Array<{ value: string; count: number }> }>
 }
 
 export interface ProductSummary {
@@ -85,6 +112,13 @@ export interface ProductSummary {
   deposit: number | null
   hasOptions: boolean
   thumbnailUrl: string | null
+  characterSlug: string | null
+  /** Listed in the last 30 days. */
+  newArrival: boolean
+  /** Colour options only; empty when the options are not colours. */
+  swatches: Swatch[]
+  /** A set of other products. */
+  set: boolean
 }
 
 export interface ProductOption {
@@ -132,6 +166,13 @@ export interface ProductDetail {
   spinFrames: string[]
   storyImage: Media | null
   status: string
+  character: { slug: string; name: string; label: string | null } | null
+  tags: Array<{ group: string; value: string }>
+  newArrival: boolean
+  /** For a set: the products it holds. */
+  bundleItems: ProductSummary[]
+  /** Sets containing this product, with what the set saves ("Complete the set"). */
+  sets: Array<{ set: ProductSummary; saving: number | null }>
 }
 
 export interface Review {
@@ -293,4 +334,183 @@ export interface LineInput {
   productId: number
   optionId: number | null
   quantity: number
+}
+
+// ---------- admin (staff only; the backend checks every privilege) ----------
+
+/** A period of shop days, ISO dates, both inclusive. */
+export interface Period {
+  from: string
+  to: string
+}
+
+export interface InsightTotals {
+  orders: number
+  units: number
+  revenue: number
+  averageOrder: number | null
+  deliveryFees: number
+  cancelled: number
+  /** 0 to 1. */
+  cancelRate: number
+  returned: number
+  newBuyers: number
+  returningBuyers: number
+  views: number
+  searches: number
+  zeroResultSearches: number
+}
+
+export interface DailySales {
+  day: string
+  orders: number
+  revenue: number
+}
+
+export interface Overview {
+  from: string
+  to: string
+  current: InsightTotals
+  previous: InsightTotals
+  daily: DailySales[]
+}
+
+export type SignalType =
+  | 'RESTOCK_SOON'
+  | 'WANTED_SOLD_OUT'
+  | 'LOW_STOCK_HIGH_DEMAND'
+  | 'LOOKED_NOT_BOUGHT'
+  | 'SLOW_MOVER'
+  | 'SEARCH_GAP'
+  | 'COMING_SOON_DEMAND'
+
+export interface ProductInsight {
+  id: number
+  slug: string
+  name: string
+  category: string
+  character: string | null
+  preorder: boolean
+  stock: number
+  views: number
+  orders: number
+  units: number
+  revenue: number
+  /** orders / views, 0 to 1; null without views or when orders outnumber views. */
+  conversion: number | null
+  wishlists: number
+  cartUnits: number
+  cartMembers: number
+  /** null when nothing sold in the period. */
+  daysLeft: number | null
+  signals: SignalType[]
+}
+
+export interface Signal {
+  type: SignalType
+  title: string
+  reason: string
+  productId: number | null
+  productSlug: string | null
+  term: string | null
+  categorySlug: string | null
+  value: number
+}
+
+export type BreakdownBy = 'CATEGORY' | 'CHARACTER' | 'DISTRICT' | 'PAYMENT_METHOD'
+
+export interface BreakdownRow {
+  name: string
+  orders: number
+  units: number
+  revenue: number
+  /** 0 to 1. */
+  share: number
+}
+
+export interface SearchTerm {
+  term: string
+  searches: number
+  zeroResults: number
+}
+
+export interface Searches {
+  top: SearchTerm[]
+  zeroResults: SearchTerm[]
+}
+
+export type ProductInsightSort = 'revenue' | 'units' | 'views' | 'conversion' | 'wishlists' | 'daysLeft' | 'stock'
+
+/** Exact stock (staff only); a product with options sells from each option. */
+export interface ProductStock {
+  productId: number
+  stock: number
+  options: Array<{ id: number; value: string; stock: number }>
+}
+
+export type OrderAction = 'PACK' | 'SHIP' | 'DELIVER' | 'CANCEL' | 'RETURN'
+
+export type MediaKind = 'PHOTO' | 'SPIN_FRAME' | 'STORY'
+export type ProductStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED'
+
+/** What `PUT /api/admin/products/{id}` and `POST /api/admin/products` take (backend `ProductRequest`). */
+export interface ProductRequestBody {
+  slug: string
+  categoryId: number | null
+  characterId: number | null
+  name: string
+  maker: string | null
+  summary: string
+  description: string | null
+  story: string | null
+  storyQuote: string | null
+  specLine: string | null
+  price: number | null
+  compareAtPrice: number | null
+  stock: number
+  preorder: boolean
+  /** "2027-01" */
+  preorderRelease: string | null
+  deposit: number | null
+  sized: boolean
+  status: ProductStatus
+  optionName: string | null
+  options: Array<{ value: string; priceDelta: number; stock: number; swatch: string | null }>
+  facts: Array<{ label: string; value: string }>
+  boxItems: string[]
+  media: Array<{ kind: MediaKind; url: string; altText: string | null }>
+  bundleProductIds: number[]
+  tags: Array<{ group: string; value: string }>
+}
+
+/** `GET /api/admin/products/{id}/edit`: the request shape plus ids (options keep theirs for display only). */
+export interface ProductEdit extends Omit<ProductRequestBody, 'options'> {
+  id: number
+  options: Array<{ id: number; value: string; priceDelta: number; stock: number; swatch: string | null }>
+}
+
+export type UserStatus = 'ACTIVE' | 'BANNED'
+
+export interface AdminUser {
+  id: number
+  name: string | null
+  phone: string | null
+  email: string | null
+  status: UserStatus
+  roles: string[]
+  creationDate: string
+}
+
+export type ReviewStatus = 'PUBLISHED' | 'HIDDEN'
+
+/** A review for moderation: display name only, no contact details. */
+export interface AdminReview {
+  id: number
+  productId: number
+  productName: string | null
+  authorName: string
+  rating: number
+  body: string
+  status: ReviewStatus
+  createdAt: string
 }

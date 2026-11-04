@@ -52,10 +52,14 @@ function withCart() {
 async function fillAddress() {
   await userEvent.type(screen.getByLabelText('Full name'), 'Tasnim Rahman')
   await userEvent.type(screen.getByLabelText('Mobile number'), '01812345678')
-  await userEvent.selectOptions(screen.getByLabelText('District'), 'Gazipur')
+  await userEvent.click(screen.getByRole('radio', { name: /Outside Dhaka/ }))
+  await userEvent.selectOptions(screen.getByLabelText('Your district'), 'Gazipur')
   await userEvent.type(screen.getByLabelText('Area or thana'), 'Tongi')
   await userEvent.type(screen.getByLabelText('House, road and flat'), 'House 4, Road 2')
 }
+
+/** The place-order button (the phone's sticky bar and the desktop summary hold one each; same form). */
+const place = async (total: string) => (await screen.findAllByRole('button', { name: `Place order · ${total}` }))[0]
 
 const quoteRoute = (_u: URL, init: RequestInit | undefined) => {
   const body = bodyOf(init) as { items: LineInput[]; district?: string }
@@ -76,7 +80,7 @@ describe('checkout', () => {
     withCart()
     mockApi({ 'GET /api/checkout/delivery-options': () => envelope(200, deliveryOptions), 'POST /api/checkout/quote': quoteRoute })
     renderWithProviders(routes, '/checkout')
-    await userEvent.click(await screen.findByRole('button', { name: 'Place order, ৳ 1,520' }))
+    await userEvent.click(await place('৳ 1,520'))
     const alert = await screen.findByRole('alert')
     expect(alert).toHaveTextContent('4 things to fix before we can deliver')
     await waitFor(() => expect(alert).toHaveFocus())
@@ -93,13 +97,16 @@ describe('checkout', () => {
       'POST /api/orders': () => envelope(201, order()),
     })
     renderWithProviders(routes, '/checkout')
-    await screen.findByRole('button', { name: 'Place order, ৳ 1,520' })
+    await place('৳ 1,520')
     await fillAddress()
-    expect(await screen.findByRole('button', { name: 'Place order, ৳ 1,580' })).toBeInTheDocument()
-    expect(screen.getByText('Delivery to Gazipur')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Place order, ৳ 1,580' }))
+    expect(await place('৳ 1,580')).toBeInTheDocument()
+    expect(screen.getAllByText('Delivery to Gazipur').length).toBeGreaterThan(0)
+    await userEvent.click(await place('৳ 1,580'))
     expect(await screen.findByRole('heading', { name: 'Order placed. Thank you, Tasnim.' })).toBeInTheDocument()
-    expect(screen.getByText('In 2 to 4 days. Have ৳ 1,580 ready.')).toBeInTheDocument()
+    expect(screen.getAllByText('Have this ready').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('৳ 1,580', { selector: '.done-due' }).length).toBeGreaterThan(0)
+    expect(screen.getByText('In 2 to 4 days')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Track order' })).toHaveAttribute('href', '/track?order=SS-7K2M9QXA')
     const call = fetchMock.mock.calls.find(([u]) => String(u).endsWith('/api/orders'))
     const headers = call?.[1]?.headers as Record<string, string>
     expect(headers['Idempotency-Key']).toMatch(/^[0-9a-f-]{36}$/)
@@ -108,6 +115,22 @@ describe('checkout', () => {
       area: 'Tongi', addressLine: 'House 4, Road 2', paymentMethod: 'COD', saveAddress: false,
     })
     expect(localStorage.getItem('senpai.cart')).toBeNull()
+  })
+
+  it('shows the order summary on demand and prices the delivery zone', async () => {
+    withCart()
+    mockApi({ 'GET /api/checkout/delivery-options': () => envelope(200, deliveryOptions), 'POST /api/checkout/quote': quoteRoute })
+    renderWithProviders(routes, '/checkout')
+    const toggle = await screen.findByRole('button', { name: /Show order summary · 1 item/ })
+    expect(document.getElementById('co-sum')).not.toBeVisible()
+    await userEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(document.getElementById('co-sum')).toBeVisible()
+    expect(screen.getByRole('radio', { name: /Inside Dhaka/ })).toBeChecked()
+    expect(screen.getByRole('radio', { name: /Inside Dhaka 1 to 2 days · ৳ 70/ })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('radio', { name: /Outside Dhaka/ }))
+    expect(screen.getByLabelText('Your district')).toHaveValue('Gazipur')
+    expect(await place('৳ 1,580')).toBeInTheDocument()
   })
 
   it('retries with the same key after a network error, so the order is never doubled', async () => {
@@ -125,11 +148,11 @@ describe('checkout', () => {
       },
     })
     renderWithProviders(routes, '/checkout')
-    await screen.findByRole('button', { name: /Place order/ })
+    expect((await screen.findAllByRole('button', { name: /Place order/ }))[0]).toBeInTheDocument()
     await fillAddress()
-    await userEvent.click(await screen.findByRole('button', { name: 'Place order, ৳ 1,580' }))
+    await userEvent.click(await place('৳ 1,580'))
     expect(await screen.findByText(/you will not be charged twice/)).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Place order, ৳ 1,580' }))
+    await userEvent.click(await place('৳ 1,580'))
     expect(await screen.findByRole('heading', { name: /Order placed/ })).toBeInTheDocument()
     expect(keys[0]).toBe(keys[1])
   })
@@ -142,9 +165,9 @@ describe('checkout', () => {
       'POST /api/orders': () => envelope(409, { productIds: [7] }, 'Some items just sold out. Check your cart.'),
     })
     renderWithProviders(routes, '/checkout')
-    await screen.findByRole('button', { name: /Place order/ })
+    expect((await screen.findAllByRole('button', { name: /Place order/ }))[0]).toBeInTheDocument()
     await fillAddress()
-    await userEvent.click(await screen.findByRole('button', { name: 'Place order, ৳ 1,580' }))
+    await userEvent.click(await place('৳ 1,580'))
     expect(await screen.findByText('Something in your cart changed')).toBeInTheDocument()
     expect(screen.getByText('Some items just sold out. Check your cart.')).toBeInTheDocument()
   })
@@ -159,11 +182,11 @@ describe('checkout', () => {
       'POST /api/orders': () => envelope(201, order({ paymentMethod: 'BKASH', amountDueOnDelivery: 0, paymentAction: { type: 'REDIRECT', url: 'https://pay.example/bkash/1' } })),
     })
     renderWithProviders(routes, '/checkout')
-    await screen.findByRole('button', { name: /Place order/ })
+    expect((await screen.findAllByRole('button', { name: /Place order/ }))[0]).toBeInTheDocument()
     await fillAddress()
     await userEvent.click(screen.getByRole('radio', { name: /bKash/ }))
-    expect(screen.getByText('You confirm the payment on the next screen.')).toBeInTheDocument()
-    await userEvent.click(await screen.findByRole('button', { name: 'Place order, ৳ 1,580' }))
+    expect(screen.getAllByText('You confirm the payment on the next screen.').length).toBe(2)
+    await userEvent.click(await place('৳ 1,580'))
     await waitFor(() => expect(assign).toHaveBeenCalledWith('https://pay.example/bkash/1'))
   })
 
@@ -219,7 +242,7 @@ describe('after checkout', () => {
     await userEvent.clear(screen.getByLabelText('Mobile number'))
     await userEvent.type(screen.getByLabelText('Mobile number'), '01812345678')
     await userEvent.click(screen.getByRole('button', { name: 'Track order' }))
-    expect(await screen.findByText('Packed', { selector: '.pill' })).toBeInTheDocument()
+    expect(await screen.findByText('Packed', { selector: '.tag' })).toBeInTheDocument()
     expect(screen.getByText('Sakura steel bottle, Colour: Petal pink ×1')).toBeInTheDocument()
   })
 
@@ -239,7 +262,7 @@ describe('after checkout', () => {
     expect(screen.getByText('Have ৳ 1,580 ready for the rider.')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Cancel order' }))
     await userEvent.click(screen.getByRole('button', { name: 'Yes, cancel this order' }))
-    expect(await screen.findByText('Cancelled', { selector: '.pill' })).toBeInTheDocument()
+    expect(await screen.findByText('Cancelled', { selector: '.tag' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Cancel order' })).not.toBeInTheDocument()
   })
 

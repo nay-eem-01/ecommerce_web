@@ -1,13 +1,13 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import type { LineInput, Quote, QuoteLine } from '../../api/types'
-import { CartBadge } from '../../layout/CartBadge'
 import { bodyOf, envelope, mockApi } from '../../test/api'
-import { deliveryOptions, summary, tokens } from '../../test/fixtures'
+import { deliveryOptions, detail, tokens } from '../../test/fixtures'
 import { renderWithProviders, storeSession } from '../../test/render'
-import { ProductCard } from '../catalog/ProductCard'
-import { CartPage } from './CartPage'
+import { useBag } from './BagContext'
+import { BagDrawer, CartPage, pickForFreeDelivery } from './Bag'
+import { summary } from '../../test/fixtures'
 
 function qLine(over: Partial<QuoteLine> = {}): QuoteLine {
   return {
@@ -28,41 +28,49 @@ function quoteFor(items: LineInput[], over: Partial<QuoteLine> = {}): Quote {
   }
 }
 
+function OpenBag() {
+  const bag = useBag()
+  return (
+    <button type="button" onClick={bag.open}>
+      Open bag
+    </button>
+  )
+}
+
 const renderCart = () =>
   renderWithProviders(
-    <>
-      <CartBadge />
-      <Routes>
-        <Route path="/cart" element={<CartPage />} />
-      </Routes>
-    </>,
+    <Routes>
+      <Route path="/cart" element={<CartPage />} />
+    </Routes>,
     '/cart',
   )
+
+const quoteApi = (over: Partial<QuoteLine> = {}) => ({
+  'GET /api/checkout/delivery-options': () => envelope(200, deliveryOptions),
+  'POST /api/checkout/quote': (_u: URL, init: RequestInit | undefined) => envelope(200, quoteFor((bodyOf(init) as { items: LineInput[] }).items, over)),
+})
 
 function guestCart(lines: LineInput[]) {
   localStorage.setItem('senpai.cart', JSON.stringify(lines))
 }
 
-describe('cart page', () => {
-  it('invites browsing when empty', async () => {
+describe('bag', () => {
+  it('invites shopping when empty', async () => {
     mockApi({ 'GET /api/checkout/delivery-options': () => envelope(200, deliveryOptions) })
     renderCart()
-    expect(screen.getByRole('heading', { name: 'Your cart is empty' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Browse products' })).toHaveAttribute('href', '/shop')
+    expect(screen.getByText('Your bag is empty')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Shop the drop' })).toHaveAttribute('href', '/shop')
   })
 
   it('shows the server’s quote: lines, free-delivery progress, delivery fee and total', async () => {
     guestCart([{ productId: 7, optionId: null, quantity: 1 }])
-    const fetchMock = mockApi({
-      'GET /api/checkout/delivery-options': () => envelope(200, deliveryOptions),
-      'POST /api/checkout/quote': (_u, init) => envelope(200, quoteFor((bodyOf(init) as { items: LineInput[] }).items)),
-    })
+    const fetchMock = mockApi(quoteApi())
     renderCart()
-    const summaryBox = await screen.findByRole('complementary', { name: 'Order summary' })
-    expect(await within(summaryBox).findByText('৳ 1,550')).toBeInTheDocument()
-    expect(within(summaryBox).getByText('৳ 1,550', { selector: 'strong' })).toBeInTheDocument()
-    expect(within(summaryBox).getByText('৳ 70')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Cart, 1 item' })).toBeInTheDocument()
+    expect(await screen.findByText('৳ 1,550', { selector: 'b' })).toBeInTheDocument()
+    expect(screen.getByRole('progressbar', { name: 'Towards free delivery' })).toHaveAttribute('aria-valuenow', '48')
+    expect(screen.getByText('৳ 70 in Dhaka')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Checkout · ৳ 1,520' })).toHaveAttribute('href', '/checkout')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Your bag 1 item')
     expect(bodyOf(fetchMock.mock.calls.find(([u]) => String(u).endsWith('/quote'))?.[1])).toEqual({
       items: [{ productId: 7, optionId: null, quantity: 1 }],
       district: 'Dhaka',
@@ -71,44 +79,81 @@ describe('cart page', () => {
 
   it('re-quotes when the quantity changes and unlocks free delivery', async () => {
     guestCart([{ productId: 7, optionId: null, quantity: 1 }])
-    mockApi({
-      'GET /api/checkout/delivery-options': () => envelope(200, deliveryOptions),
-      'POST /api/checkout/quote': (_u, init) => envelope(200, quoteFor((bodyOf(init) as { items: LineInput[] }).items)),
-    })
+    mockApi(quoteApi())
     renderCart()
     await userEvent.click(await screen.findByRole('button', { name: 'One more' }))
     await userEvent.click(screen.getByRole('button', { name: 'One more' }))
-    expect(await screen.findByText('Free delivery')).toBeInTheDocument()
-    expect(screen.getByText('৳ 1,450 each')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Cart, 3 items' })).toBeInTheDocument()
+    expect(await screen.findByText('Free delivery unlocked.')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('3 items')
   })
 
   it('moves a line to the wishlist with save for later', async () => {
     guestCart([{ productId: 7, optionId: null, quantity: 1 }])
-    mockApi({
-      'GET /api/checkout/delivery-options': () => envelope(200, deliveryOptions),
-      'POST /api/checkout/quote': (_u, init) => envelope(200, quoteFor((bodyOf(init) as { items: LineInput[] }).items)),
-    })
+    mockApi(quoteApi())
     renderCart()
     await userEvent.click(await screen.findByRole('button', { name: 'Save for later' }))
     expect(await screen.findByText('Moved to your wishlist')).toBeInTheDocument()
     expect(JSON.parse(localStorage.getItem('senpai.wishlist') ?? '[]')).toEqual([7])
-    expect(await screen.findByRole('heading', { name: 'Your cart is empty' })).toBeInTheDocument()
+    expect(await screen.findByText('Your bag is empty')).toBeInTheDocument()
   })
 
   it('blocks checkout and explains when there is not enough stock', async () => {
     guestCart([{ productId: 7, optionId: null, quantity: 5 }])
-    mockApi({
-      'GET /api/checkout/delivery-options': () => envelope(200, deliveryOptions),
-      'POST /api/checkout/quote': (_u, init) =>
-        envelope(200, quoteFor((bodyOf(init) as { items: LineInput[] }).items, { enoughStock: false, stockState: 'LOW_STOCK' })),
-    })
+    mockApi(quoteApi({ enoughStock: false, stockState: 'LOW_STOCK' }))
     renderCart()
-    expect(await screen.findByText('Not enough left for this quantity. Lower it to check out.')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Go to checkout' })).toHaveAttribute('aria-disabled', 'true')
+    expect(await screen.findByText('Not enough left for this quantity.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Checkout ·/ })).toHaveAttribute('aria-disabled', 'true')
   })
 
-  it('drops products the shop no longer sells from a guest cart', async () => {
+  it('offers to swap a set’s part for the set', async () => {
+    guestCart([{ productId: 7, optionId: null, quantity: 1 }])
+    mockApi({
+      ...quoteApi(),
+      'GET /api/products/sakura-bottle': () =>
+        envelope(200, { ...detail(), id: 7, slug: 'sakura-bottle', sets: [{ set: summary({ id: 9, slug: 'kit', name: 'Kitsune school-run set', price: 3990, set: true }), saving: 410 }] }),
+      'GET /api/products/sakura-bottle/related': () => envelope(200, []),
+    })
+    renderCart()
+    expect(await screen.findByText('Swap for the set and save ৳ 410')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Add Kitsune school-run set' }))
+    await waitFor(() => expect(JSON.parse(localStorage.getItem('senpai.cart') ?? '[]')).toEqual([{ productId: 9, optionId: null, quantity: 1 }]))
+  })
+
+  it('picks the cheapest product that reaches free delivery', () => {
+    const a = summary({ id: 1, price: 900 })
+    const b = summary({ id: 2, price: 1650 })
+    const c = summary({ id: 3, price: 2950 })
+    const sold = summary({ id: 4, price: 1600, stockState: 'SOLD_OUT' })
+    expect(pickForFreeDelivery([c, a, b, sold], new Set(), 1550)?.id).toBe(2)
+    expect(pickForFreeDelivery([a, b], new Set([2]), 1550)?.id).toBe(1)
+    expect(pickForFreeDelivery([], new Set(), 10)).toBeNull()
+  })
+
+  it('opens as a drawer, closes with Escape and when a link inside is followed', async () => {
+    guestCart([{ productId: 7, optionId: null, quantity: 1 }])
+    mockApi(quoteApi())
+    renderWithProviders(
+      <>
+        <OpenBag />
+        <BagDrawer />
+        <Routes>
+          <Route path="*" element={null} />
+        </Routes>
+      </>,
+      '/shop',
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Open bag' }))
+    expect(screen.getByRole('dialog', { name: /Your bag/ })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Close bag' }).at(-1)).toHaveFocus()
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Open bag' }))
+    await userEvent.click(await screen.findByRole('link', { name: /Checkout ·/ }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByTestId('path')).toHaveTextContent('/checkout')
+  })
+
+  it('drops products the shop no longer sells from a guest bag', async () => {
     guestCart([{ productId: 7, optionId: null, quantity: 1 }, { productId: 99, optionId: null, quantity: 1 }])
     mockApi({
       'GET /api/checkout/delivery-options': () => envelope(200, deliveryOptions),
@@ -138,33 +183,7 @@ describe('cart page', () => {
     renderCart()
     expect(await screen.findByText('No longer available. It is not in your total.')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Remove' }))
-    expect(await screen.findByRole('heading', { name: 'Your cart is empty' })).toBeInTheDocument()
+    expect(await screen.findByText('Your bag is empty')).toBeInTheDocument()
     expect(fetchMock.mock.calls.some(([u, i]) => String(u).endsWith('/api/cart/items/31') && i?.method === 'DELETE')).toBe(true)
   })
 })
-
-describe('product card actions', () => {
-  it('adds a product without options in one tap and saves to the wishlist', async () => {
-    mockApi({})
-    renderWithProviders(
-      <>
-        <CartBadge />
-        <ProductCard product={summary()} />
-      </>,
-    )
-    await userEvent.click(screen.getByRole('button', { name: 'Add Sakura steel bottle, 750 ml to cart' }))
-    expect(await screen.findByText('Added to cart: Sakura steel bottle, 750 ml')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Cart, 1 item' })).toBeInTheDocument()
-    const heart = screen.getByRole('button', { name: 'Save Sakura steel bottle, 750 ml to wishlist' })
-    await userEvent.click(heart)
-    expect(heart).toHaveAttribute('aria-pressed', 'true')
-  })
-
-  it('sends products with options to their page to choose', () => {
-    mockApi({})
-    renderWithProviders(<ProductCard product={summary({ hasOptions: true })} />)
-    expect(screen.getByRole('link', { name: 'Choose' })).toHaveAttribute('href', '/p/sakura-bottle')
-    expect(screen.queryByRole('button', { name: /to cart/ })).not.toBeInTheDocument()
-  })
-})
-

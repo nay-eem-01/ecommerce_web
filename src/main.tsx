@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import { SessionProvider } from './features/auth/session'
+import { BagProvider } from './features/cart/BagContext'
 import { CartProvider } from './features/cart/CartProvider'
 import './fonts'
 import './styles/index.css'
@@ -19,7 +20,9 @@ createRoot(document.getElementById('root')!).render(
         <CartProvider>
           <BrowserRouter>
             <ToastProvider>
-              <App />
+              <BagProvider>
+                <App />
+              </BagProvider>
             </ToastProvider>
           </BrowserRouter>
         </CartProvider>

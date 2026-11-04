@@ -1,4 +1,4 @@
-import { api, clearSession, getAccessToken, refreshSession, setSessionLostHandler, startSession, tokenExpiry } from './client'
+import { api, clearSession, withQuery, getAccessToken, refreshSession, setSessionLostHandler, startSession, tokenExpiry } from './client'
 import { ApiError } from './errors'
 import { bodyOf, envelope, mockApi } from '../test/api'
 import { tokens } from '../test/fixtures'
@@ -11,6 +11,16 @@ function jwt(expSeconds: number) {
 afterEach(() => clearSession())
 
 describe('api', () => {
+  it('sends FormData as is, so the browser sets the multipart boundary', async () => {
+    const fetchMock = mockApi({ 'POST /api/admin/uploads': () => envelope(201, { url: 'https://cdn/x.webp' }) })
+    const form = new FormData()
+    form.append('file', new Blob(['png']), 'photo.png')
+    await expect(api('/api/admin/uploads', { method: 'POST', body: form })).resolves.toEqual({ url: 'https://cdn/x.webp' })
+    const init = fetchMock.mock.calls[0][1]!
+    expect(init.body).toBe(form)
+    expect((init.headers as Record<string, string>)['Content-Type']).toBeUndefined()
+  })
+
   it('returns the payload of the envelope', async () => {
     mockApi({ 'GET /api/categories': () => envelope(200, [{ slug: 'figures' }]) })
     await expect(api('/api/categories')).resolves.toEqual([{ slug: 'figures' }])
@@ -104,6 +114,14 @@ describe('api', () => {
     })
     await api('/api/users/me')
     expect(String(fetchMock.mock.calls[0][0])).toContain('/refresh-token')
+  })
+
+  it('adds parameters to a path that already has repeated tag values', () => {
+    expect(withQuery('/api/products?tag=Capacity%3A750%20ml', { pageNo: 0, category: 'bottles' })).toBe(
+      '/api/products?tag=Capacity%3A750%20ml&pageNo=0&category=bottles',
+    )
+    expect(withQuery('/api/products', { q: '' })).toBe('/api/products')
+    expect(withQuery('/api/products', { q: 'wig' })).toBe('/api/products?q=wig')
   })
 
   it('reads the expiry of a JWT', () => {

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { errorMessage } from '../../api/errors'
 import { useCreateReview, useDeleteReview, useReviews } from '../../api/products'
 import { shortDate } from '../../lib/dates'
-import { Icon } from '../../ui/Icon'
+import { Icon } from '../../ui/icons'
 import { Stars } from '../../ui/Stars'
 import { useToast } from '../../ui/Toast'
 import { useSession } from '../auth/session'
@@ -59,7 +59,7 @@ export function Reviews({ slug }: { slug: string }) {
           <header>
             <span className="who">{r.authorName}</span>
             <Stars rating={r.rating} />
-            {r.verifiedBuyer && <span className="pill ok">Verified buyer</span>}
+            {r.verifiedBuyer && <span className="tag ok">Verified buyer</span>}
             <span className="muted" style={{ fontSize: 14 }}>
               {shortDate(r.creationDate)}
             </span>
@@ -80,18 +80,18 @@ export function Reviews({ slug }: { slug: string }) {
         </article>
       ))}
       {reviews.hasNextPage && (
-        <button className="btn alt" type="button" style={{ marginTop: 16, marginRight: 12 }} disabled={reviews.isFetchingNextPage} onClick={() => reviews.fetchNextPage()}>
+        <button className="btn ghost" type="button" style={{ marginTop: 16, marginRight: 12 }} disabled={reviews.isFetchingNextPage} onClick={() => reviews.fetchNextPage()}>
           {reviews.isFetchingNextPage ? 'Loading…' : 'Show more reviews'}
         </button>
       )}
       {status !== 'signed-in' ? (
-        <Link className="btn alt" style={{ marginTop: 16 }} to={`/sign-in?back=${encodeURIComponent(`/p/${slug}#sec-reviews`)}`}>
+        <Link className="btn ghost" style={{ marginTop: 16 }} to={`/sign-in?back=${encodeURIComponent(`/p/${slug}#reviews`)}`}>
           Sign in to write a review
         </Link>
       ) : writing ? (
         <ReviewForm slug={slug} onDone={() => setWriting(false)} />
       ) : (
-        <button className="btn alt" type="button" style={{ marginTop: 16 }} onClick={() => setWriting(true)}>
+        <button className="btn ghost" type="button" style={{ marginTop: 16 }} onClick={() => setWriting(true)}>
           Write a review
         </button>
       )}
@@ -149,7 +149,7 @@ function ReviewForm({ slug, onDone }: { slug: string; onDone: () => void }) {
         <button className="btn" type="submit" disabled={create.isPending}>
           {create.isPending ? 'Posting…' : 'Post review'}
         </button>
-        <button className="btn alt" type="button" onClick={onDone}>
+        <button className="btn ghost" type="button" onClick={onDone}>
           Cancel
         </button>
       </div>

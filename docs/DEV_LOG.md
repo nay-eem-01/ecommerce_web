@@ -7,21 +7,136 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
 
 ## Where we are
 
-- Phase 2 on `feat/storefront-base`: 2.1 scaffold (`chore/storefront-scaffold`) 2.2 catalog pages
-  (`feat/catalog-pages`), 2.3 product page (`feat/product-page`) 2.4 cart (`feat/cart`), 2.5
-  checkout (`feat/checkout`) and 2.6 account (`feat/account`) and 2.7
-  end-to-end tests (`test/e2e`) done. **Phase 2 is complete.**
+- Phase 2 (v1 storefront) is merged into `development`.
+- **Phase 2v, the v2 design, is complete** on `feat/storefront-v2-base`: v2.1 `feat/v2-foundation` → v2.2
+  `feat/v2-home` → v2.3 `feat/v2-listing` → v2.4 `feat/v2-product` → v2.5 `feat/v2-bag-checkout` → v2.6
+  `feat/v2-account` → v2.7 `chore/v2-e2e-docs`, stacked, each one building, linting and passing its tests.
+- It needs the backend's `feat/catalog-v2-base` (characters, facets, sets, early access, v2 demo catalog).
+- **Phase 4 admin 4.1 to 4.4 is merged** into `feat/storefront-v2-base`. **4.5, the product editor**, is on
+  `claude/ecstatic-wozniak-r0uwbi` (restarted from that base), against the backend branch of the same name (uploads,
+  edit view, field errors), and so are **4.6 categories and characters** and **4.7 users and reviews**. Phase 4 is
+  complete.
 
 ## Next up
 
-1. **Nayeem:** PR the steps in order (they are pushed to `nay-eem-01/ecommerce_web`) into
-   `feat/storefront-base`, then the base into `development`.
-2. **Backend:** `docs/BACKEND_REQUESTS.md`, first the refresh-token grace window.
-3. Real product photos and 36-frame turntables replace the stand-in renders as they are shot.
+1. **Nayeem:** merge the backend v2 PRs first, then PR the v2 steps in order into `feat/storefront-v2-base`, then the
+   base into `development` (see the PR order in the session notes / below).
+2. **Nayeem:** then PR the admin branch `claude/ecstatic-wozniak-r0uwbi` (it sits on `feat/storefront-v2-base`) and
+   the backend's insights branch of the same name.
+3. **Backend:** `docs/BACKEND_REQUESTS.md`, first the refresh-token grace window, then `stockLeft` on quote lines and
+   the amount due on the order list.
+4. Real product photos and 36-frame turntables replace the product art as they are shot.
 
 ## Open items
 
 - `npm audit`: 3 moderate advisories in `openapi-typescript`'s dependencies (development tool only, not shipped).
+- The e2e online-payment test follows the backend's `PAYMENT_RETURN_URL` (default port 5173): keep `npm run dev`
+  running beside `npm run e2e`.
+
+---
+
+## 2026-11-04: Categories, characters, users and reviews (Phase 4, steps 4.6 and 4.7)
+
+**Done**
+- `/admin/catalog`: categories and characters in one screen; each table creates and edits inline (slug suggested
+  from the name, sign, order, shown in the shop; categories also coming soon) and deletes after a confirmation; the
+  backend's 409 ("still has products") is shown.
+- `/admin/users`: search by name, phone or email (in the URL), suspend and allow back after a confirmation; the
+  backend's refusal to suspend your own account is shown. Suspending signs the account out everywhere (backend).
+- `/admin/reviews`: All / Published / Hidden, newest first, with rating, text, display name, date and a link to the
+  product in the editor; Hide and Publish.
+- Navigation: Dashboard, Products, Catalog, Orders, Users, Reviews.
+- 10 new screen tests (148 in all). Playwright: a product created through the editor with an uploaded photo shows
+  that photo on its shop page; all eight end-to-end tests pass against the backend on a fresh development database.
+  Catalog and users checked in a real browser with real data.
+
+## 2026-11-04: Product editor with image uploads (Phase 4, step 4.5)
+
+Design and plan in the backend repository: `docs/superpowers/specs/2026-11-04-admin-catalog-editor-design.md`,
+`docs/superpowers/plans/2026-11-04-admin-catalog-editor.md`.
+
+**Done**
+- `/admin/products/new` and `/admin/products/:id`: one page for the whole product (basics with a slug suggested from
+  the name, price and pre-order, options with stock and swatch, images, description and story, facts, in the box,
+  filters as "Group: Value" lines, set contents, status), saved at once; Archive with a confirmation.
+- Loaded from `GET /api/admin/products/{id}/edit` and saved as the same document, so a save changes only what was
+  edited (tested: the PUT body equals the loaded document plus the one edit).
+- Images: many files at once, at most 3 uploading at a time, each in its own slot; a failed one keeps its place
+  with the backend's message and a Retry; 360 frames ordered by file name (`frame-2` before `frame-10`); reorder by
+  drag or the move buttons; alt text. Save waits for running uploads.
+- Field errors beside their field and focused: numbers are checked before sending, and the backend now names the
+  field (`payload.field`, e.g. `options[1].stock`; `slug` on a clash).
+- Unsaved changes ask before leaving: tab close, any in-app link (caught in the capture phase, since BrowserRouter
+  has no blocker), Cancel.
+- Products page: "New product", "Edit" per row, and a "Not on sale" list (drafts and archived are not in the
+  insights table). Dev proxy forwards `/uploads` to the backend.
+- 14 new unit and screen tests (138 in all); Playwright admin tests pass against the backend. Checked in a real
+  browser: a 3000×2000 PNG uploaded through the editor shows on the product page as a 2 400 px WebP.
+
+**Bugs found and fixed**
+- On phones the admin page grew to the product table's width (about 1080 px) and the Edit and Stock buttons were
+  off-screen and unreachable (since 4.3). The admin grid column is `minmax(0, 1fr)`; Playwright regression test at
+  390 px, which fails without the fix.
+- Option and fact rows stacked every field: `repeat(auto-fit, …) auto` is not a valid grid template; flex rows now.
+
+**Known limitations**
+- Admin nav links are guarded; browser back/forward with unsaved edits is not.
+
+## 2026-11-04: Admin dashboard (Phase 4, steps 4.1 to 4.4)
+
+**Done**
+- `/admin/*` in its own lazy chunks and frame: staff sign-in (email + password), the first-time password change
+  (the backend ends every session, so it signs in again), `RequireAdmin` (no ADMIN role: staff sign-in with "no staff
+  access"; `mustChangePassword`: the password screen only). The backend checks every privilege regardless.
+- Dashboard: 7/30/90 days or a range (in the URL, Dhaka days); eight totals against the previous period (a fall in
+  cancellations shows as good); "What to act on" signals linking to the product row; revenue per day (one-series SVG
+  bars, hover read-out, a table view); sales by category, character, district or payment; searches that found nothing
+  and the most searched.
+- Products: every active product with stock, days left, views, conversion, sold, revenue, saved and in-cart counts and
+  its signals; sort by any column (`aria-sort`); exact stock editor per option (`GET /api/admin/products/{id}/stock`,
+  added to the backend for this).
+- Orders: list with status filter, number or phone search and paging; detail with items, totals, address, history
+  and only the moves the state machine allows; cancel and return ask first; the backend's 409 message is shown.
+- 19 screen and unit tests; `e2e/admin.spec.ts` (needs `E2E_ADMIN_PASSWORD`) places a cash order through the API,
+  signs in as staff, opens the dashboard and products, and packs the order. All six Playwright tests pass against
+  the backend on a fresh development database.
+
+**Bugs found and fixed**
+- Real data showed a 300% conversion (orders placed without a counted view); the backend now returns no rate when
+  orders outnumber views.
+- The password change lost its "sign in again" notice: React Router 7 navigates in a transition, so the guard saw the
+  sign-out first. The sign-in page now ends the session state after arriving.
+- A status move retried after its first attempt went through (lost response) showed the state machine's 409 although
+  the order had moved; on 409 the order is reloaded and a move that already happened counts as done.
+- `shop.spec.ts` sort check was flaky (read the cards before the re-sorted page arrived); it polls now.
+
+**Known limitations**
+- Admin screens are dark only, like the shop. No product create/edit form yet (4.5); use Swagger meanwhile.
+
+## 2026-11-03: The v2 design on every screen (phase 2v)
+
+**Done**
+- v2.1 to v2.6 as in the roadmap: the canvas stylesheet verbatim, product art in place of photos, home, listings with
+  the filter sheet (phone) and filter bar (desktop) in the URL, characters, sets, coming soon with early access,
+  search with suggestions and recent searches, the product page with the 360 gallery and set offer, the bag drawer,
+  focused checkout with the Inside/Outside Dhaka choice, the order-placed page, sign-in with six code boxes, and the
+  account with tabs (phone) and side nav (desktop).
+- v2.7: the Playwright tests rewritten for the v2 screens and catalog (bag drawer, `Place order · ৳ X`, code boxes,
+  account order cards). All five pass against the backend's v2 branch on a fresh development database. 102 unit and
+  screen tests pass.
+- Each screen checked at 390 and 1440 px against the canvas on a real backend (screenshots), no sideways scroll.
+
+**Bugs found and fixed on the way**
+- `.d-only { display: revert }` broke the header grid; the breakpoint classes now hide with `display: none` only.
+- The bag drawer rendered outside `.app` and lost the type styles; it renders inside now.
+- The code boxes pulled focus back to the first box: moving focus ran the next box's guard against the value before
+  React re-rendered. They keep the latest value in a ref (regression test in `account.test.tsx`).
+- `.app p { font-weight: 400 }` out-ranked single classes (order number, `p.price`); bolded with `.app` selectors.
+
+**Decisions**
+- The bag's add-on swaps a part for its set (the set is its own product) rather than adding the other part.
+- `/account` opens on the orders, as the design does; `/account/orders` redirects there; Details is a fourth tab.
+- Deviations from the canvas are listed in `docs/DESIGN.md`.
 
 ---
 

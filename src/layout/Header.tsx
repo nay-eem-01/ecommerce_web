@@ -1,83 +1,155 @@
-import { useState, type FormEvent } from 'react'
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useCategories } from '../api/catalog'
-import { firstName, useSession } from '../features/auth/session'
-import { Icon } from '../ui/Icon'
+import { useDeliveryOptions } from '../api/checkout'
+import { useSession } from '../features/auth/session'
+import { useBag } from '../features/cart/BagContext'
+import { useCart } from '../features/cart/CartProvider'
+import { tk } from '../lib/money'
+import { Icon } from '../ui/icons'
 import { useHighlightedCategory } from './highlight'
-import { CartBadge } from './CartBadge'
+import { navItems } from './nav'
 
-/** Sticky header: wordmark, search, wishlist, account, cart; then the category row. */
+/**
+ * Announcement bar and sticky header. Phone: menu, centred wordmark, search and bag, then a scrolling menu row.
+ * Desktop: the menu on the left, wordmark in the middle, search, account and bag on the right.
+ */
 export function Header() {
-  const { status, user } = useSession()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const [params] = useSearchParams()
-  const urlQ = location.pathname === '/search' ? (params.get('q') ?? '') : null
-  const [q, setQ] = useState(urlQ ?? '')
-  // Keep the field in step with the search page's query (adjusting state while rendering, not in an effect).
-  const [seenQ, setSeenQ] = useState(urlQ)
-  if (urlQ !== seenQ) {
-    setSeenQ(urlQ)
-    if (urlQ !== null) setQ(urlQ)
-  }
+  const { status } = useSession()
   const categories = useCategories()
+  const delivery = useDeliveryOptions()
   const highlighted = useHighlightedCategory()
+  const { pathname } = useLocation()
+  // Phone product and account pages swap the menu for a back arrow and drop the menu row, as in the design.
+  const onAccount = pathname.startsWith('/account')
+  const onProduct = pathname.startsWith('/p/') || onAccount
+  const bag = useBag()
+  const { count } = useCart()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const items = navItems(categories.data)
+  const freeAt = delivery.data ? ` · Free delivery over ${tk(delivery.data.freeDeliveryThreshold)}` : ''
 
-  function submit(event: FormEvent) {
-    event.preventDefault()
-    navigate(`/search?q=${encodeURIComponent(q.trim())}`)
-  }
-
-  const path = location.pathname
-  const current = (to: string, slug?: string) =>
-    path === to || (slug !== undefined && highlighted === slug) ? 'page' : undefined
+  const isOn = (to: string) =>
+    pathname === to || (highlighted !== null && to === `/shop/${highlighted}`) ? 'on' : undefined
+  const accountTo = status === 'signed-in' ? '/account' : '/sign-in'
 
   return (
-    <header className="hdr">
-      <div className="wrap">
-        <div className="hdr-row">
-          <Link className="mark" to="/">
-            senpai<span>.</span>supply
-          </Link>
-          <form className="search" role="search" onSubmit={submit}>
-            <Icon name="search" />
-            <label className="vh" htmlFor="q">
-              Search products
-            </label>
-            <input
-              id="q"
-              type="search"
-              placeholder="Search figures, costumes, bottles, bags"
-              autoComplete="off"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
-          </form>
-          <div className="hdr-actions">
-            <Link className="icon-btn" to="/account/wishlist" aria-label="Wishlist">
-              <Icon name="heart" />
+    <>
+      <div className="ann">
+        Cash on delivery across Bangladesh{freeAt}
+        <span className="d-only"> · 7-day returns</span>
+      </div>
+      <header className="hdr">
+        <div className="hdr-wrap">
+          <div className="hdr-row ph-only">
+            <div className="hdr-left">
+              {onProduct ? (
+                <Link className="ibtn" to={onAccount ? '/' : highlighted ? `/shop/${highlighted}` : '/shop'} aria-label={onAccount ? 'Home' : 'Back to the shop'}>
+                  <Icon name="back" />
+                </Link>
+              ) : (
+                <button className="ibtn" aria-label="Menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}>
+                  <Icon name="menu" />
+                </button>
+              )}
+            </div>
+            <Link className="mark" to="/">
+              senpai<span>.</span>supply
             </Link>
-            <Link className="icon-btn" to={status === 'signed-in' ? '/account' : '/sign-in'}>
-              <Icon name="user" />
-              <span className="label-sm">{status === 'signed-in' ? firstName(user) : 'Sign in'}</span>
-            </Link>
-            <CartBadge />
+            <div className="hdr-right">
+              <Link className="ibtn" to="/search" aria-label="Search">
+                <Icon name="search" />
+              </Link>
+              <BagButton count={count} onOpen={bag.open} />
+            </div>
           </div>
+          <div className="d-hdr-row d-only">
+            <nav className="d-nav" aria-label="Shop">
+              {items.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={isOn(item.to)}
+                  style={isOn(item.to) ? { color: 'var(--text)', borderBottom: '2px solid var(--pink)', paddingBottom: 4 } : item.soon ? { color: 'var(--muted)' } : undefined}
+                >
+                  {item.label}
+                  {item.soon && <span style={{ color: 'var(--cyan)', fontSize: 10, marginLeft: 4 }}>soon</span>}
+                </NavLink>
+              ))}
+            </nav>
+            <Link className="mark" to="/" style={{ fontSize: 26 }}>
+              senpai<span>.</span>supply
+            </Link>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 4 }}>
+              <Link className="d-search" to="/search">
+                <Icon name="search" small />
+                Search bottles, bags, characters
+              </Link>
+              <Link className="ibtn" to={accountTo} aria-label={status === 'signed-in' ? 'Account' : 'Sign in'}>
+                <Icon name="user" />
+              </Link>
+              <BagButton count={count} onOpen={bag.open} />
+            </div>
+          </div>
+          {!onProduct && <nav className="nav ph-only" aria-label="Shop">
+            {items.map((item) => (
+              <NavLink key={item.to} to={item.to} className={item.soon ? 'soon' : isOn(item.to)}>
+                {item.label}
+                {item.soon && <i>soon</i>}
+              </NavLink>
+            ))}
+          </nav>}
         </div>
-        <nav className="cats" aria-label="Categories">
-          <Link to="/shop" aria-current={current('/shop')}>
-            All products
-          </Link>
-          {(categories.data ?? []).map((c) => (
-            <Link key={c.slug} to={`/shop/${c.slug}`} aria-current={current(`/shop/${c.slug}`, c.slug)}>
-              {c.name}
+      </header>
+      {menuOpen && <PhoneMenu items={items} accountTo={accountTo} signedIn={status === 'signed-in'} onClose={() => setMenuOpen(false)} />}
+    </>
+  )
+}
+
+function BagButton({ count, onOpen }: { count: number; onOpen: () => void }) {
+  return (
+    <button className="ibtn" aria-label={`Bag, ${count} item${count === 1 ? '' : 's'}`} onClick={onOpen}>
+      <Icon name="bag" />
+      {count > 0 && (
+        <span className="dot" aria-hidden="true">
+          {count}
+        </span>
+      )}
+    </button>
+  )
+}
+
+function PhoneMenu({ items, accountTo, signedIn, onClose }: { items: ReturnType<typeof navItems>; accountTo: string; signedIn: boolean; onClose: () => void }) {
+  return (
+    <>
+      <button className="scrim-fill" aria-label="Close menu" onClick={onClose} />
+      <div className="drawer left" role="dialog" aria-label="Menu">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 8px 10px 16px', borderBottom: '1px solid var(--line)' }}>
+          <span className="mark">
+            senpai<span>.</span>supply
+          </span>
+          <button className="ibtn" aria-label="Close menu" onClick={onClose}>
+            <Icon name="close" />
+          </button>
+        </div>
+        <nav aria-label="Menu" style={{ display: 'flex', flexDirection: 'column', padding: '8px 16px' }}>
+          {items.map((item) => (
+            <Link key={item.to} to={item.to} onClick={onClose} className="display" style={{ fontSize: 24, padding: '10px 0', color: item.soon ? 'var(--muted)' : undefined }}>
+              {item.label}
+              {item.soon && <span className="eyebrow" style={{ color: 'var(--cyan)', marginLeft: 8 }}>soon</span>}
             </Link>
           ))}
-          <Link to="/preorders" aria-current={current('/preorders')}>
-            Pre-orders
-          </Link>
         </nav>
+        <div style={{ marginTop: 'auto', padding: 16, borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Link className="btn ghost block" to={accountTo} onClick={onClose}>
+            {signedIn ? 'My account' : 'Sign in'}
+          </Link>
+          <div style={{ display: 'flex', gap: 18, fontSize: 14, color: 'var(--text-2)' }}>
+            <Link to="/track" onClick={onClose}>Track an order</Link>
+            <Link to="/help" onClick={onClose}>Help</Link>
+          </div>
+        </div>
       </div>
-    </header>
+    </>
   )
 }

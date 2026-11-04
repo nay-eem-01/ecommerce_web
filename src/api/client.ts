@@ -162,7 +162,9 @@ async function refreshWithStoredToken(): Promise<TokenResponse> {
 async function send(path: string, options: RequestOptions, withToken = true): Promise<Response> {
   const headers: Record<string, string> = { Accept: 'application/json', ...options.headers }
   let body: BodyInit | undefined
-  if (options.body !== undefined) {
+  if (options.body instanceof FormData) {
+    body = options.body // the browser sets the multipart boundary itself
+  } else if (options.body !== undefined) {
     headers['Content-Type'] = 'application/json'
     body = JSON.stringify(options.body)
   }

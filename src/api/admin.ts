@@ -2,7 +2,11 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { api } from './client'
 import { ApiError } from './errors'
 import type {
+  AdminReview,
+  AdminUser,
   BreakdownBy,
+  Category,
+  Character,
   BreakdownRow,
   Order,
   OrderAction,
@@ -12,12 +16,18 @@ import type {
   Page,
   Period,
   ProductDetail,
+  ProductEdit,
+  ProductRequestBody,
+  ProductStatus,
+  ProductSummary,
+  ReviewStatus,
   ProductInsight,
   ProductStock,
   ProductInsightSort,
   Searches,
   Signal,
   TokenResponse,
+  UserStatus,
 } from './types'
 
 /** Staff sign-in with email and password. */
@@ -90,6 +100,139 @@ export function useUpdateStock() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'stock', id] })
       queryClient.invalidateQueries({ queryKey: ['admin', 'signals'] })
     },
+  })
+}
+
+// ---------- catalog editor ----------
+
+export function useProductEdit(id: number | null) {
+  return useQuery({
+    queryKey: ['admin', 'edit', id],
+    queryFn: () => api<ProductEdit>(`/api/admin/products/${id}/edit`),
+    enabled: id !== null,
+    // the editor owns the document once loaded; a background refetch must not overwrite unsaved edits
+    staleTime: Infinity,
+  })
+}
+
+/** Creates (no id) or replaces (id) a product with the whole document. */
+export function useSaveProduct() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, body }: { id: number | null; body: ProductRequestBody }) =>
+      id === null
+        ? api<ProductDetail>('/api/admin/products', { method: 'POST', body })
+        : api<ProductDetail>(`/api/admin/products/${id}`, { method: 'PUT', body }),
+    onSuccess: (product) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'edit', product.id] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'products'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'catalog'] })
+    },
+  })
+}
+
+export function useArchiveProduct() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api<null>(`/api/admin/products/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'products'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'catalog'] })
+    },
+  })
+}
+
+/** One image to the backend; resolves to the stored WebP's URL. */
+export function uploadImage(file: File): Promise<string> {
+  const form = new FormData()
+  form.append('file', file)
+  return api<{ url: string }>('/api/admin/uploads', { method: 'POST', body: form }).then((r) => r.url)
+}
+
+export function useAdminCategories() {
+  return useQuery({ queryKey: ['admin', 'catalog', 'categories'], queryFn: () => api<Category[]>('/api/admin/categories') })
+}
+
+export function useAdminCharacters() {
+  return useQuery({ queryKey: ['admin', 'catalog', 'characters'], queryFn: () => api<Character[]>('/api/admin/characters') })
+}
+
+/** A category or character as the admin form sends it (`comingSoon` is for categories only). */
+export interface CollectionBody {
+  slug: string
+  name: string
+  label: string | null
+  blurb: string | null
+  sortOrder: number
+  active: boolean
+  comingSoon?: boolean
+}
+
+export type CollectionKind = 'categories' | 'characters'
+
+/** Create (no id) or edit a category or character. */
+export function useSaveCollection(kind: CollectionKind) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, body }: { id: number | null; body: CollectionBody }) =>
+      id === null
+        ? api<unknown>(`/api/admin/${kind}`, { method: 'POST', body })
+        : api<unknown>(`/api/admin/${kind}/${id}`, { method: 'PUT', body }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'catalog', kind] }),
+  })
+}
+
+/** 409 while products still use it; the backend's message says so. */
+export function useDeleteCollection(kind: CollectionKind) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api<null>(`/api/admin/${kind}/${id}`, { method: 'DELETE' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'catalog', kind] }),
+  })
+}
+
+/** Products of one status (drafts, archived) or all, for lists outside the insights table and for set contents. */
+export function useAdminProductList(status: ProductStatus | '') {
+  return useQuery({
+    queryKey: ['admin', 'catalog', 'products', status],
+    queryFn: () => api<Page<ProductSummary>>('/api/admin/products', { params: { status, pageSize: 100, sortBy: 'name', ascOrDesc: 'asc' } }),
+  })
+}
+
+// ---------- people ----------
+
+export function useAdminUsers(q: string, pageNo: number) {
+  return useQuery({
+    queryKey: ['admin', 'users', q, pageNo],
+    queryFn: () => api<Page<AdminUser>>('/api/admin/users', { params: { q, pageNo, pageSize: 20 } }),
+    placeholderData: keepPreviousData,
+  })
+}
+
+/** Ban or allow back; the backend refuses banning your own account. */
+export function useSetUserStatus() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, status }: { id: number; status: UserStatus }) =>
+      api<AdminUser>(`/api/admin/users/${id}/status`, { method: 'PUT', body: { status } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+}
+
+export function useAdminReviews(status: ReviewStatus | '', pageNo: number) {
+  return useQuery({
+    queryKey: ['admin', 'reviews', status, pageNo],
+    queryFn: () => api<Page<AdminReview>>('/api/admin/reviews', { params: { status, pageNo, pageSize: 20 } }),
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function useSetReviewStatus() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, status }: { id: number; status: ReviewStatus }) =>
+      api<null>(`/api/admin/reviews/${id}/status`, { method: 'PATCH', body: { status } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'reviews'] }),
   })
 }
 

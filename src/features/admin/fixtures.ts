@@ -1,4 +1,4 @@
-import type { InsightTotals, Overview, ProductInsight, TokenResponse } from '../../api/types'
+import type { InsightTotals, Overview, ProductEdit, ProductInsight, TokenResponse } from '../../api/types'
 import { envelope } from '../../test/api'
 import { me, tokens } from '../../test/fixtures'
 
@@ -33,3 +33,20 @@ export const insight = (over: Partial<ProductInsight> = {}): ProductInsight => (
   stock: 4, views: 120, orders: 3, units: 3, revenue: 4350, conversion: 0.025, wishlists: 5, cartUnits: 1, cartMembers: 1,
   daysLeft: 40, signals: [], ...over,
 })
+
+/** A product as the edit view returns it: two colour options (stock 4 and 0), a photo, two 360 frames, two tags. */
+export const productEdit: ProductEdit = {
+  id: 7, slug: 'kitsune-bottle', categoryId: 3, characterId: 4, name: 'Kitsune Night bottle', maker: null,
+  summary: 'Steel, 750 ml.', description: 'Keeps tea hot.\n\nSix hours.', story: null, storyQuote: null, specLine: '750 ml',
+  price: 1450, compareAtPrice: null, stock: 4, preorder: false, preorderRelease: null, deposit: null, sized: false,
+  status: 'ACTIVE', optionName: 'Colour',
+  options: [{ id: 1, value: 'Petal pink', priceDelta: 0, stock: 4, swatch: '#f2a7c3' }, { id: 2, value: 'Night navy', priceDelta: 100, stock: 0, swatch: null }],
+  facts: [{ label: 'Capacity', value: '750 ml' }], boxItems: ['Bottle', 'Spare lid'],
+  media: [
+    { kind: 'PHOTO', url: 'https://cdn/p1.webp', altText: 'Front' },
+    { kind: 'SPIN_FRAME', url: 'https://cdn/s1.webp', altText: null },
+    { kind: 'SPIN_FRAME', url: 'https://cdn/s2.webp', altText: null },
+  ],
+  bundleProductIds: [], tags: [{ group: 'Capacity', value: '750 ml' }, { group: 'Material', value: 'Steel' }],
+}
+

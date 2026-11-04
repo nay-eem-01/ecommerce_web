@@ -9,7 +9,7 @@ into the phase's base branch (see `.claude/skills/git-workflow`).
 
 **Legend:** ✅ done · 🔄 in progress · ⬜ not started
 
-**Progress:** Phase 2 complete. Phase 2v (the v2 design): 7 of 7 steps done. Phase 4 (admin): 4 of 5.
+**Progress:** Phase 2 complete. Phase 2v (the v2 design): 7 of 7 steps done. Phase 4 (admin): 7 of 7.
 
 ## Phase 2 - Storefront (`feat/storefront-base`)
 
@@ -49,5 +49,7 @@ Staff screens for the backend's insights API (its roadmap 4.5a/4.5b). Design and
 | 4.2 | Dashboard: period in the URL, totals against the previous period, signals, revenue per day, breakdowns, searches | same | ✅ |
 | 4.3 | Products: insights table sorted by any column, signals per row, exact stock editor per option | same | ✅ |
 | 4.4 | Orders: list with status and search, detail, status moves with a note and confirmation; Playwright admin run | same | ✅ |
-| 4.5 | Full product editor, categories, characters, users, reviews, early-access list | - | ⬜ |
+| 4.5 | Product editor: create and edit every field, options with stock, images uploaded as WebP (photos, 360 frames in file-name order, story), set contents, archive, unsaved-changes guard; drafts and archived listed | `claude/ecstatic-wozniak-r0uwbi` | ✅ |
+| 4.6 | Categories and characters: list, create and edit inline (slug from the name, sign, order, shown, coming soon), delete with confirmation | `claude/ecstatic-wozniak-r0uwbi` | ✅ |
+| 4.7 | Users (search, suspend, allow back) and reviews (filter, hide, publish); Playwright: a product with an uploaded photo in the shop | `claude/ecstatic-wozniak-r0uwbi` | ✅ |
 

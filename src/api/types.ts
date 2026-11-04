@@ -449,3 +449,68 @@ export interface ProductStock {
 }
 
 export type OrderAction = 'PACK' | 'SHIP' | 'DELIVER' | 'CANCEL' | 'RETURN'
+
+export type MediaKind = 'PHOTO' | 'SPIN_FRAME' | 'STORY'
+export type ProductStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED'
+
+/** What `PUT /api/admin/products/{id}` and `POST /api/admin/products` take (backend `ProductRequest`). */
+export interface ProductRequestBody {
+  slug: string
+  categoryId: number | null
+  characterId: number | null
+  name: string
+  maker: string | null
+  summary: string
+  description: string | null
+  story: string | null
+  storyQuote: string | null
+  specLine: string | null
+  price: number | null
+  compareAtPrice: number | null
+  stock: number
+  preorder: boolean
+  /** "2027-01" */
+  preorderRelease: string | null
+  deposit: number | null
+  sized: boolean
+  status: ProductStatus
+  optionName: string | null
+  options: Array<{ value: string; priceDelta: number; stock: number; swatch: string | null }>
+  facts: Array<{ label: string; value: string }>
+  boxItems: string[]
+  media: Array<{ kind: MediaKind; url: string; altText: string | null }>
+  bundleProductIds: number[]
+  tags: Array<{ group: string; value: string }>
+}
+
+/** `GET /api/admin/products/{id}/edit`: the request shape plus ids (options keep theirs for display only). */
+export interface ProductEdit extends Omit<ProductRequestBody, 'options'> {
+  id: number
+  options: Array<{ id: number; value: string; priceDelta: number; stock: number; swatch: string | null }>
+}
+
+export type UserStatus = 'ACTIVE' | 'BANNED'
+
+export interface AdminUser {
+  id: number
+  name: string | null
+  phone: string | null
+  email: string | null
+  status: UserStatus
+  roles: string[]
+  creationDate: string
+}
+
+export type ReviewStatus = 'PUBLISHED' | 'HIDDEN'
+
+/** A review for moderation: display name only, no contact details. */
+export interface AdminReview {
+  id: number
+  productId: number
+  productName: string | null
+  authorName: string
+  rating: number
+  body: string
+  status: ReviewStatus
+  createdAt: string
+}

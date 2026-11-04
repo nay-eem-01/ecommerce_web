@@ -34,6 +34,10 @@ const RequireAdmin = page(() => import('./features/admin/RequireAdmin'), 'Requir
 const AdminLayout = page(() => import('./features/admin/AdminLayout'), 'AdminLayout')
 const DashboardPage = page(() => import('./features/admin/DashboardPage'), 'DashboardPage')
 const AdminProductsPage = page(() => import('./features/admin/ProductsPage'), 'ProductsPage')
+const ProductEditorPage = page(() => import('./features/admin/editor/ProductEditorPage'), 'ProductEditorPage')
+const CatalogPage = page(() => import('./features/admin/CatalogPage'), 'CatalogPage')
+const UsersPage = page(() => import('./features/admin/UsersPage'), 'UsersPage')
+const ReviewsPage = page(() => import('./features/admin/ReviewsPage'), 'ReviewsPage')
 const AdminOrdersPage = page(() => import('./features/admin/OrdersPage'), 'OrdersPage')
 const AdminOrderPage = page(() => import('./features/admin/AdminOrderPage'), 'AdminOrderPage')
 
@@ -83,7 +87,12 @@ function AdminRoutes() {
         <Route element={<AdminLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="products" element={<AdminProductsPage />} />
+          <Route path="products/new" element={<ProductEditorPage />} />
+          <Route path="products/:id" element={<ProductEditorPage />} />
+          <Route path="catalog" element={<CatalogPage />} />
           <Route path="orders" element={<AdminOrdersPage />} />
+          <Route path="users" element={<UsersPage />} />
+          <Route path="reviews" element={<ReviewsPage />} />
           <Route path="orders/:orderNumber" element={<AdminOrderPage />} />
         </Route>
       </Route>

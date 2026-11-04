@@ -18,7 +18,10 @@ export function AdminLayout() {
             Dashboard
           </NavLink>
           <NavLink to="/admin/products">Products</NavLink>
+          <NavLink to="/admin/catalog">Catalog</NavLink>
           <NavLink to="/admin/orders">Orders</NavLink>
+          <NavLink to="/admin/users">Users</NavLink>
+          <NavLink to="/admin/reviews">Reviews</NavLink>
         </nav>
         <span className="muted" style={{ fontSize: 13 }}>
           {user?.email}

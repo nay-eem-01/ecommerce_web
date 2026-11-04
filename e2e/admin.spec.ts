@@ -49,3 +49,51 @@ test('staff sign in, see the dashboard and pack an order', async ({ page, reques
   await expect(page.getByRole('button', { name: 'Hand to rider' })).toBeVisible()
   await expect(page.getByText('Packed by the e2e test')).toBeVisible()
 })
+
+/** Regression: on a phone the admin grid grew to the product table's width and its Edit buttons fell off-screen. */
+test('on a phone the product table scrolls in its panel and Edit opens the editor', async ({ page }) => {
+  test.skip(!PASSWORD, 'Set E2E_ADMIN_PASSWORD to the admin password (after its first change).')
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/admin/sign-in?back=/admin/products')
+  await page.getByLabel('Email').fill(EMAIL)
+  await page.getByLabel('Password').fill(PASSWORD!)
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  const main = page.locator('main.adm-main')
+  await expect(page.getByRole('heading', { name: 'Products' })).toBeVisible()
+  expect((await main.boundingBox())!.width).toBeLessThanOrEqual(390)
+  await page.getByRole('link', { name: /^Edit / }).first().click()
+  await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible()
+})
+
+test('a product created with an uploaded photo shows it in the shop', async ({ page }) => {
+  test.skip(!PASSWORD, 'Set E2E_ADMIN_PASSWORD to the admin password (after its first change).')
+  const name = `E2E bottle ${Date.now()}`
+  await page.goto('/admin/sign-in?back=/admin/products/new')
+  await page.getByLabel('Email', { exact: true }).fill(EMAIL)
+  await page.getByLabel('Password', { exact: true }).fill(PASSWORD!)
+  await page.getByRole('button', { name: 'Sign in' }).click()
+
+  await page.getByLabel('Name', { exact: true }).fill(name)
+  await page.getByLabel('Category', { exact: true }).selectOption({ index: 1 })
+  await page.getByLabel('Status', { exact: true }).selectOption('ACTIVE')
+  await page.getByLabel('Summary', { exact: true }).fill('A bottle made by the end-to-end test.')
+  await page.getByLabel('Price (৳)', { exact: true }).fill('990')
+  await page.getByLabel('Stock', { exact: true }).fill('3')
+  const photos = page.getByRole('group', { name: 'Photos' })
+  await photos.locator('input[type=file]').setInputFiles('e2e/fixtures/photo.png')
+  await expect(photos.locator('img')).toHaveCount(1)
+  await photos.getByLabel(/Alt text/).fill('The test bottle')
+  await page.getByRole('button', { name: 'Create product' }).click()
+  await expect(page).toHaveURL(/\/admin\/products\/\d+$/)
+  const slug = await page.getByLabel('Address name (slug)', { exact: true }).inputValue()
+
+  await page.goto(`/p/${slug}`)
+  const img = page.locator('img[src*="/uploads/"]').first()
+  await expect(img).toBeVisible()
+  // the e2e type-check has no DOM types; these are the two image fields we read
+  const loaded = await img.evaluate((el) => {
+    const image = el as unknown as { complete: boolean; naturalWidth: number }
+    return image.complete && image.naturalWidth > 0
+  })
+  expect(loaded).toBe(true)
+})

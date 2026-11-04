@@ -11,6 +11,16 @@ function jwt(expSeconds: number) {
 afterEach(() => clearSession())
 
 describe('api', () => {
+  it('sends FormData as is, so the browser sets the multipart boundary', async () => {
+    const fetchMock = mockApi({ 'POST /api/admin/uploads': () => envelope(201, { url: 'https://cdn/x.webp' }) })
+    const form = new FormData()
+    form.append('file', new Blob(['png']), 'photo.png')
+    await expect(api('/api/admin/uploads', { method: 'POST', body: form })).resolves.toEqual({ url: 'https://cdn/x.webp' })
+    const init = fetchMock.mock.calls[0][1]!
+    expect(init.body).toBe(form)
+    expect((init.headers as Record<string, string>)['Content-Type']).toBeUndefined()
+  })
+
   it('returns the payload of the envelope', async () => {
     mockApi({ 'GET /api/categories': () => envelope(200, [{ slug: 'figures' }]) })
     await expect(api('/api/categories')).resolves.toEqual([{ slug: 'figures' }])

@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { useProductInsights } from '../../api/admin'
+import { useAdminProductList, useProductInsights } from '../../api/admin'
 import type { ProductInsight, ProductInsightSort } from '../../api/types'
 import { PageLoading } from '../../layout/AppLayout'
 import { tk } from '../../lib/money'
@@ -49,8 +49,9 @@ export function ProductsPage() {
     <>
       <div className="adm-head">
         <h1 className="adm-h1">Products</h1>
-        <PeriodPicker period={period} onChange={setPeriod} />
+        <Link className="btn" to="/admin/products/new" style={{ minHeight: 42 }}>New product</Link>
       </div>
+      <PeriodPicker period={period} onChange={setPeriod} />
       <p className="muted" style={{ fontSize: 13 }}>
         Sales and views are for the period; saved and in-cart counts are signed-in shoppers today.
       </p>
@@ -93,10 +94,13 @@ export function ProductsPage() {
                       </span>
                     </td>
                     <td>
+                      <span style={{ display: 'flex', gap: 6 }}>
+                      <Link className="tbtn" to={`/admin/products/${p.id}`} aria-label={`Edit ${p.name}`}>Edit</Link>
                       <button type="button" className="tbtn" aria-expanded={editing === p.id} aria-label={`Edit stock of ${p.name}`}
                         onClick={() => setEditing(editing === p.id ? null : p.id)}>
-                        Edit stock
+                        Stock
                       </button>
+                      </span>
                     </td>
                   </tr>
                   {editing === p.id && (
@@ -112,6 +116,32 @@ export function ProductsPage() {
           </table>
         </div>
       )}
+      <NotOnSale />
     </>
+  )
+}
+
+/** Drafts and archived products, which the insights table (products on sale) does not list. */
+// shortcut: the first 100 of each by name; page this list once there are more.
+function NotOnSale() {
+  const drafts = useAdminProductList('DRAFT')
+  const archived = useAdminProductList('ARCHIVED')
+  const rows = [
+    ...(drafts.data?.content ?? []).map((p) => ({ ...p, label: 'Draft' })),
+    ...(archived.data?.content ?? []).map((p) => ({ ...p, label: 'Archived' })),
+  ]
+  if (!rows.length) return null
+  return (
+    <section className="panel adm-card" aria-labelledby="nos-h">
+      <h2 id="nos-h">Not on sale</h2>
+      <ul className="adm-signals">
+        {rows.map((p) => (
+          <li key={p.id}>
+            <span className="tag">{p.label}</span>
+            <Link className="link" to={`/admin/products/${p.id}`}>{p.name}</Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }

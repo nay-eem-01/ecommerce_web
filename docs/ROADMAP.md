@@ -9,7 +9,7 @@ into the phase's base branch (see `.claude/skills/git-workflow`).
 
 **Legend:** ✅ done · 🔄 in progress · ⬜ not started
 
-**Progress:** Phase 2 complete. Phase 2v (the v2 design): 7 of 7 steps done.
+**Progress:** Phase 2 complete. Phase 2v (the v2 design): 7 of 7 steps done. Phase 4 (admin): 4 of 5.
 
 ## Phase 2 - Storefront (`feat/storefront-base`)
 
@@ -37,3 +37,17 @@ The "Senpai Supply v2" canvas on every screen, phone and desktop (`docs/DESIGN.m
 | v2.5 | Bag drawer and `/cart`, focused checkout, order placed, payment result | `feat/v2-bag-checkout` | ✅ |
 | v2.6 | Sign-in with six code boxes, account (orders, wishlist, addresses, details), order and track pages | `feat/v2-account` | ✅ |
 | v2.7 | End-to-end tests on the v2 screens and catalog; docs | `chore/v2-e2e-docs` | ✅ |
+
+## Phase 4 - Admin (`claude/ecstatic-wozniak-r0uwbi`, on `feat/storefront-v2-base`)
+
+Staff screens for the backend's insights API (its roadmap 4.5a/4.5b). Design and plan in the backend repository:
+`docs/superpowers/specs/2026-11-04-admin-insights-design.md`, `docs/superpowers/plans/2026-11-04-admin-insights.md`.
+
+| # | Step | Branch | Status |
+|---|---|---|---|
+| 4.1 | `/admin`: staff email sign-in, first-time password change, admin guard and layout (lazy chunk, no shop chrome) | `claude/ecstatic-wozniak-r0uwbi` | ✅ |
+| 4.2 | Dashboard: period in the URL, totals against the previous period, signals, revenue per day, breakdowns, searches | same | ✅ |
+| 4.3 | Products: insights table sorted by any column, signals per row, exact stock editor per option | same | ✅ |
+| 4.4 | Orders: list with status and search, detail, status moves with a note and confirmation; Playwright admin run | same | ✅ |
+| 4.5 | Full product editor, categories, characters, users, reviews, early-access list | - | ⬜ |
+

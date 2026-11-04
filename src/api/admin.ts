@@ -3,6 +3,8 @@ import { api } from './client'
 import { ApiError } from './errors'
 import type {
   BreakdownBy,
+  Category,
+  Character,
   BreakdownRow,
   Order,
   OrderAction,
@@ -12,6 +14,10 @@ import type {
   Page,
   Period,
   ProductDetail,
+  ProductEdit,
+  ProductRequestBody,
+  ProductStatus,
+  ProductSummary,
   ProductInsight,
   ProductStock,
   ProductInsightSort,
@@ -90,6 +96,68 @@ export function useUpdateStock() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'stock', id] })
       queryClient.invalidateQueries({ queryKey: ['admin', 'signals'] })
     },
+  })
+}
+
+// ---------- catalog editor ----------
+
+export function useProductEdit(id: number | null) {
+  return useQuery({
+    queryKey: ['admin', 'edit', id],
+    queryFn: () => api<ProductEdit>(`/api/admin/products/${id}/edit`),
+    enabled: id !== null,
+    // the editor owns the document once loaded; a background refetch must not overwrite unsaved edits
+    staleTime: Infinity,
+  })
+}
+
+/** Creates (no id) or replaces (id) a product with the whole document. */
+export function useSaveProduct() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, body }: { id: number | null; body: ProductRequestBody }) =>
+      id === null
+        ? api<ProductDetail>('/api/admin/products', { method: 'POST', body })
+        : api<ProductDetail>(`/api/admin/products/${id}`, { method: 'PUT', body }),
+    onSuccess: (product) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'edit', product.id] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'products'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'catalog'] })
+    },
+  })
+}
+
+export function useArchiveProduct() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api<null>(`/api/admin/products/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'products'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'catalog'] })
+    },
+  })
+}
+
+/** One image to the backend; resolves to the stored WebP's URL. */
+export function uploadImage(file: File): Promise<string> {
+  const form = new FormData()
+  form.append('file', file)
+  return api<{ url: string }>('/api/admin/uploads', { method: 'POST', body: form }).then((r) => r.url)
+}
+
+export function useAdminCategories() {
+  return useQuery({ queryKey: ['admin', 'catalog', 'categories'], queryFn: () => api<Category[]>('/api/admin/categories') })
+}
+
+export function useAdminCharacters() {
+  return useQuery({ queryKey: ['admin', 'catalog', 'characters'], queryFn: () => api<Character[]>('/api/admin/characters') })
+}
+
+/** Products of one status (drafts, archived) or all, for lists outside the insights table and for set contents. */
+export function useAdminProductList(status: ProductStatus | '') {
+  return useQuery({
+    queryKey: ['admin', 'catalog', 'products', status],
+    queryFn: () => api<Page<ProductSummary>>('/api/admin/products', { params: { status, pageSize: 100, sortBy: 'name', ascOrDesc: 'asc' } }),
   })
 }
 

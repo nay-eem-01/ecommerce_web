@@ -14,7 +14,8 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
 - It needs the backend's `feat/catalog-v2-base` (characters, facets, sets, early access, v2 demo catalog).
 - **Phase 4 admin 4.1 to 4.4 is merged** into `feat/storefront-v2-base`. **4.5, the product editor**, is on
   `claude/ecstatic-wozniak-r0uwbi` (restarted from that base), against the backend branch of the same name (uploads,
-  edit view, field errors). Next: 4.6 categories and characters, 4.7 users and reviews.
+  edit view, field errors), and so are **4.6 categories and characters** and **4.7 users and reviews**. Phase 4 is
+  complete.
 
 ## Next up
 
@@ -33,6 +34,21 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
   running beside `npm run e2e`.
 
 ---
+
+## 2026-11-04: Categories, characters, users and reviews (Phase 4, steps 4.6 and 4.7)
+
+**Done**
+- `/admin/catalog`: categories and characters in one screen; each table creates and edits inline (slug suggested
+  from the name, sign, order, shown in the shop; categories also coming soon) and deletes after a confirmation; the
+  backend's 409 ("still has products") is shown.
+- `/admin/users`: search by name, phone or email (in the URL), suspend and allow back after a confirmation; the
+  backend's refusal to suspend your own account is shown. Suspending signs the account out everywhere (backend).
+- `/admin/reviews`: All / Published / Hidden, newest first, with rating, text, display name, date and a link to the
+  product in the editor; Hide and Publish.
+- Navigation: Dashboard, Products, Catalog, Orders, Users, Reviews.
+- 10 new screen tests (148 in all). Playwright: a product created through the editor with an uploaded photo shows
+  that photo on its shop page; all eight end-to-end tests pass against the backend on a fresh development database.
+  Catalog and users checked in a real browser with real data.
 
 ## 2026-11-04: Product editor with image uploads (Phase 4, step 4.5)
 

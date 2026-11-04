@@ -67,6 +67,20 @@ describe('admin orders', () => {
     expect(bodyOf(patch?.[1])).toEqual({ action: 'PACK', note: 'Gift wrap' })
   })
 
+  it('treats a retried move that already went through as done', async () => {
+    let loads = 0
+    mockApi({
+      ...adminSession,
+      // first load: placed; after the 409 the reload shows the pack from the lost first attempt
+      'GET /api/admin/orders/SS-7K2M9Q': () => envelope(200, ++loads === 1 ? order() : order({ status: 'PACKED' })),
+      'PATCH /api/admin/orders/SS-7K2M9Q/status': () => envelope(409, null, 'This order cannot move to that status.'),
+    })
+    renderWithProviders(routes, '/admin/orders/SS-7K2M9Q')
+    await userEvent.setup().click(await screen.findByRole('button', { name: 'Mark packed' }))
+    expect(await screen.findByRole('button', { name: 'Hand to rider' })).toBeInTheDocument()
+    expect(screen.queryByText('This order cannot move to that status.')).not.toBeInTheDocument()
+  })
+
   it('asks before cancelling and shows the backend’s refusal', async () => {
     const fetchMock = mockApi({
       ...adminSession,

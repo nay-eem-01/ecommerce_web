@@ -57,6 +57,8 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
   orders outnumber views.
 - The password change lost its "sign in again" notice: React Router 7 navigates in a transition, so the guard saw the
   sign-out first. The sign-in page now ends the session state after arriving.
+- A status move retried after its first attempt went through (lost response) showed the state machine's 409 although
+  the order had moved; on 409 the order is reloaded and a move that already happened counts as done.
 - `shop.spec.ts` sort check was flaky (read the cards before the re-sorted page arrived); it polls now.
 
 **Known limitations**

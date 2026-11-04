@@ -1,5 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from './client'
+import { ApiError } from './errors'
 import type {
   BreakdownBy,
   BreakdownRow,
@@ -109,11 +110,34 @@ export function useAdminOrder(orderNumber: string) {
   })
 }
 
+/** Where each move takes an order (mirrors the backend's state machine). */
+const MOVES_TO: Record<OrderAction, OrderStatus> = {
+  PACK: 'PACKED',
+  SHIP: 'SHIPPED',
+  DELIVER: 'DELIVERED',
+  CANCEL: 'CANCELLED',
+  RETURN: 'RETURNED',
+}
+
+/**
+ * Moves an order. A retry whose first attempt went through (response lost, double submit) gets 409 from the state
+ * machine; then the order is reloaded and, if it already has the status the move leads to, that counts as done.
+ */
 export function useOrderAction(orderNumber: string) {
   const queryClient = useQueryClient()
+  const path = `/api/admin/orders/${encodeURIComponent(orderNumber)}`
   return useMutation({
-    mutationFn: (body: { action: OrderAction; note?: string }) =>
-      api<Order>(`/api/admin/orders/${encodeURIComponent(orderNumber)}/status`, { method: 'PATCH', body }),
+    mutationFn: async (body: { action: OrderAction; note?: string }) => {
+      try {
+        return await api<Order>(`${path}/status`, { method: 'PATCH', body })
+      } catch (error) {
+        if (!(error instanceof ApiError && error.status === 409)) throw error
+        const current = await api<Order>(path)
+        if (current.status === MOVES_TO[body.action]) return current
+        queryClient.setQueryData(['admin', 'order', orderNumber], current)
+        throw error
+      }
+    },
     onSuccess: (order) => {
       queryClient.setQueryData(['admin', 'order', orderNumber], order)
       queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] })

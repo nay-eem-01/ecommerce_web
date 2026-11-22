@@ -1,19 +1,41 @@
 import { useMutation } from '@tanstack/react-query'
 import { api } from './client'
-import type { OtpSent, Schemas, TokenResponse } from './types'
+import type { Schemas, TokenResponse } from './types'
 
-/** Texts a 6-digit code; also the first step of creating an account. 429 after too many requests. */
-export function useRequestOtp() {
+const signInPaths = {
+  'sign-in': '/api/auth/sign-in',
+  verify: '/api/auth/verify-email',
+  reset: '/api/auth/password/reset',
+}
+
+export function useShopperSignIn() {
   return useMutation({
-    mutationFn: (phone: string) => api<OtpSent>('/api/auth/otp/request', { method: 'POST', body: { phone } }),
+    mutationFn: ({ mode, email, password, token }: {
+      mode: keyof typeof signInPaths
+      email: Schemas['SignInRequest']['email']
+      password: Schemas['SignInRequest']['password']
+      token: string | null
+    }) => api<TokenResponse>(signInPaths[mode], {
+      method: 'POST',
+      body: mode === 'sign-in' ? { email, password } : { token, password },
+    }),
   })
 }
 
-/** Checks the code and signs in; the backend creates the account on first sign-in. */
-export function useVerifyOtp() {
+export function useEmailLink() {
   return useMutation({
-    mutationFn: (request: Schemas['OtpVerifyRequest']) =>
-      api<TokenResponse>('/api/auth/otp/verify', { method: 'POST', body: request }),
+    mutationFn: ({ mode, email }: { mode: 'register' | 'forgot' } & Schemas['EmailRequest']) =>
+      api<null>(mode === 'register' ? '/api/auth/register' : '/api/auth/password/forgot', {
+        method: 'POST',
+        body: { email },
+      }),
+  })
+}
+
+export function useGoogleSignIn(onSuccess: (tokens: TokenResponse) => Promise<void>) {
+  return useMutation({
+    mutationFn: (idToken: Schemas['GoogleRequest']['idToken']) => api<TokenResponse>('/api/auth/google', { method: 'POST', body: { idToken } }),
+    onSuccess,
   })
 }
 

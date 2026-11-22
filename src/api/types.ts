@@ -31,6 +31,7 @@ export interface Me {
   email: string | null
   roles: string[]
   hasPassword: boolean
+  emailVerified?: boolean
   mustChangePassword: boolean
 }
 

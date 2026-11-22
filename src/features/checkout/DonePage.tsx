@@ -77,12 +77,12 @@ export function Confirmation({ order, heading }: { order: Order; heading?: strin
     <div className="done-account">
       <div>
         <p style={{ fontWeight: 700 }}>Save your details for next time</p>
-        <p style={{ fontSize: 14, color: 'var(--text-2)' }}>One code by SMS, no password. Your address and this order are saved.</p>
+        <p style={{ fontSize: 14, color: 'var(--text-2)' }}>Create an account with email or Google for your next order.</p>
       </div>
-      <Link className="link ph-only" style={{ fontSize: 14 }} to={`/sign-in?phone=${encodeURIComponent(order.phone)}`}>
-        Create an account with +88 {order.phone}
+      <Link className="link ph-only" style={{ fontSize: 14 }} to="/sign-in?mode=register">
+        Create an account
       </Link>
-      <Link className="btn ghost d-only" to={`/sign-in?phone=${encodeURIComponent(order.phone)}`}>
+      <Link className="btn ghost d-only" to="/sign-in?mode=register">
         Create an account
       </Link>
     </div>

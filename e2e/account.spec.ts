@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test'
-import { enterCode, freshPhone, otpFromLog } from './helpers.ts'
+import { freshPhone, registerShopper } from './helpers.ts'
 
-const LOG = process.env.E2E_APP_LOG
+const MAILBOX = process.env.E2E_MAILBOX
 
-test('sign in with a texted code, keep the guest bag and hearts, and see the order in the account', async ({ page }) => {
-  test.skip(!LOG, 'Set E2E_APP_LOG to the backend log file to read the development SMS code')
+test('sign in with an email link, keep the guest bag and hearts, and see the order in the account', async ({ page }) => {
+  test.skip(!MAILBOX, 'Set E2E_MAILBOX to the local test SMTP mailbox file')
 
   // As a guest: one item in the bag and one heart.
   await page.goto('/p/sakura-shaker')
@@ -14,17 +14,11 @@ test('sign in with a texted code, keep the guest bag and hearts, and see the ord
   await page.getByRole('button', { name: 'Save Ramen Cat kids bottle, 500 ml to wishlist' }).click()
 
   const phone = freshPhone()
-  await page.goto('/sign-in?back=/checkout')
-  await page.getByLabel('Mobile number').fill(phone)
-  await page.getByRole('button', { name: 'Send code' }).click()
-  await expect(page.getByRole('group', { name: '6-digit code' })).toBeVisible()
-  await expect.poll(() => otpFromLog(LOG!, phone)).not.toBeNull()
-  await enterCode(page, otpFromLog(LOG!, phone)!)
+  await registerShopper(page, MAILBOX!)
+  await page.goto('/checkout')
 
-  // Back at checkout, signed in, with the merged bag and the phone filled in.
-  await page.waitForURL('**/checkout')
   await expect(page.locator('.co-title').getByText(/Signed in as/)).toBeVisible()
-  await expect(page.getByLabel('Mobile number')).toHaveValue(phone)
+  await page.getByLabel('Mobile number').fill(phone)
   await expect(page.getByRole('complementary', { name: 'Order summary' })).toContainText('Sakura tritan shaker')
   await page.getByLabel('Full name').fill('E2E Member')
   await page.getByLabel('Area or thana').fill('Uttara')
@@ -52,16 +46,10 @@ test('sign in with a texted code, keep the guest bag and hearts, and see the ord
 })
 
 test('two tabs opened together both stay signed in', async ({ browser }) => {
-  test.skip(!LOG, 'Set E2E_APP_LOG to the backend log file to read the development SMS code')
+  test.skip(!MAILBOX, 'Set E2E_MAILBOX to the local test SMTP mailbox file')
   const context = await browser.newContext()
   const first = await context.newPage()
-  const phone = freshPhone()
-  await first.goto('/sign-in')
-  await first.getByLabel('Mobile number').fill(phone)
-  await first.getByRole('button', { name: 'Send code' }).click()
-  await expect.poll(() => otpFromLog(LOG!, phone)).not.toBeNull()
-  await enterCode(first, otpFromLog(LOG!, phone)!)
-  await first.waitForURL('**/account')
+  await registerShopper(first, MAILBOX!)
 
   // Like middle-clicking two products: both tabs restore the session from the same stored refresh token at once.
   const [a, b] = [await context.newPage(), await context.newPage()]

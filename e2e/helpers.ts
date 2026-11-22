@@ -6,17 +6,25 @@ export function freshPhone(): string {
   return '0175' + String(Date.now()).slice(-7)
 }
 
-/**
- * The latest development SMS code sent to `phone`, from the backend log line
- * "[DEV SMS - not sent] to +8801...: 632210 is your Senpai Supply sign-in code. It expires in 5 minutes."
- */
-export function otpFromLog(logFile: string, phone: string): string | null {
-  const tail = phone.slice(1)
-  const line = readFileSync(logFile, 'utf8')
-    .split('\n')
-    .filter((l) => l.includes('[DEV SMS - not sent]') && l.includes(tail))
-    .at(-1)
-  return line ? (/: (\d{6}) is your/.exec(line)?.[1] ?? null) : null
+/** Registers a fresh shopper through the local test mailbox and signs in from the emailed link. */
+export async function registerShopper(page: Page, mailbox: string) {
+  const email = `e2e-${crypto.randomUUID()}@example.com`
+  await page.goto('/sign-in?mode=register')
+  await page.getByLabel('Email').fill(email)
+  await page.getByRole('button', { name: 'Send email link' }).click()
+  await expect(page.getByText('Check your inbox.', { exact: false })).toBeVisible({ timeout: 15_000 })
+  let link: string | undefined
+  await expect.poll(() => {
+    const entry = readFileSync(mailbox, 'utf8').trim().split('\n').filter(Boolean)
+      .map((line) => JSON.parse(line) as { to: string; text: string })
+      .reverse().find((mail) => mail.to === email)
+    link = entry?.text.match(/https?:\/\/[^\s]+\/verify-email#token=[\w-]+/)?.[0]
+    return Boolean(link)
+  }).toBe(true)
+  await page.goto(link!)
+  await page.getByLabel('New password').fill('Test-password-1')
+  await page.getByRole('button', { name: 'Set password and sign in' }).click()
+  await page.waitForURL('**/account')
 }
 
 /** Fills step 1 of checkout. `district` other than Dhaka picks "Outside Dhaka" and then that district. */
@@ -29,11 +37,6 @@ export async function fillDelivery(page: Page, details: { name: string; phone: s
   }
   await page.getByLabel('Area or thana').fill(details.area)
   await page.getByLabel('House, road and flat').fill(details.address)
-}
-
-/** Types the texted code into the six boxes (a fill of the first box is what the SMS autofill does). */
-export async function enterCode(page: Page, code: string) {
-  await page.getByLabel('Digit 1').fill(code)
 }
 
 /** The order number shown on a confirmation or result page. */

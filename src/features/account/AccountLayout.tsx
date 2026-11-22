@@ -39,7 +39,7 @@ export function AccountLayout() {
           </span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p className="display acct-name">{user.name || 'Your account'}</p>
-            <p className="meta">+88 {user.phone}</p>
+            <p className="meta">{user.email || (user.phone && `+88 ${user.phone}`)}</p>
           </div>
           <button className="tbtn ph-only" type="button" onClick={out}>
             Sign out

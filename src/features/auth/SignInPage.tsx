@@ -1,196 +1,136 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
-import { useRequestOtp, useVerifyOtp } from '../../api/auth'
+import { useState, type FormEvent } from 'react'
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { useEmailLink, useShopperSignIn } from '../../api/auth'
+import type { TokenResponse } from '../../api/types'
+import { GoogleButton } from './GoogleButton'
 import { errorMessage } from '../../api/errors'
-import { localDigits } from '../../lib/phone'
 import { useTitle } from '../../lib/useTitle'
 import { Icon } from '../../ui/icons'
 import { CATEGORY_ART } from '../art/art'
 import { ProductArt } from '../art/ProductArt'
-import { CodeBoxes } from './CodeBoxes'
 import { useToast } from '../../ui/Toast'
 import { mergeGuestIntoAccount } from './mergeGuest'
 import { firstName, useSession } from './session'
 
 /** Only same-site paths are followed after sign-in (no open redirect through `?back=`). */
 export function safeBack(back: string | null): string {
-  return back && back.startsWith('/') && !back.startsWith('//') ? back : '/account'
+  if (!back?.startsWith('/') || back.startsWith('//')) return '/account'
+  const origin = 'https://storefront.invalid'
+  try {
+    return new URL(back, origin).origin === origin ? back : '/account'
+  } catch {
+    return '/account'
+  }
 }
 
-/** Phone, then the 6-digit code from the SMS. The first sign-in creates the account; no password. */
 export function SignInPage() {
-  useTitle('Sign in')
+  const { pathname, hash } = useLocation()
+  const mode = pathname === '/verify-email' ? 'verify' : pathname === '/reset-password' ? 'reset' : 'sign-in'
+  return <ShopperAuthForm key={pathname} mode={mode} token={new URLSearchParams(hash.slice(1)).get('token')} />
+}
+
+function ShopperAuthForm({ mode, token }: { mode: 'sign-in' | 'verify' | 'reset'; token: string | null }) {
+  useTitle(mode === 'verify' ? 'Create account' : mode === 'reset' ? 'Reset password' : 'Sign in')
   const { status, endNotice, signedIn } = useSession()
   const [params] = useSearchParams()
   const back = safeBack(params.get('back'))
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const toast = useToast()
-  const [step, setStep] = useState<'phone' | 'code'>('phone')
-  const [phone, setPhone] = useState(params.get('phone') ?? '')
-  const [code, setCode] = useState('')
+  const [step, setStep] = useState<'login' | 'register' | 'forgot'>(params.get('mode') === 'register' ? 'register' : 'login')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
-  const [resendAt, setResendAt] = useState(0)
-  const [now, setNow] = useState(() => Date.now())
-  const requestOtp = useRequestOtp()
-  const verifyOtp = useVerifyOtp()
-  const codeInput = useRef<HTMLInputElement>(null)
-  // While the cart merges after sign-in, stay here instead of following the signed-in redirect below.
   const [finishing, setFinishing] = useState(false)
+  const signIn = useShopperSignIn()
+  const emailLink = useEmailLink()
+  const fromCheckout = back === '/checkout'
+  const completingLink = mode !== 'sign-in'
+  const askingForLink = !completingLink && step !== 'login'
+  const title = mode === 'reset' ? 'Reset your password' : mode === 'verify' || step === 'register'
+    ? 'Create an account' : step === 'forgot' ? 'Forgot your password?' : 'Sign in'
 
-  // Tick while a resend is not allowed yet.
-  useEffect(() => {
-    if (resendAt <= now) return
-    const timer = setTimeout(() => setNow(Date.now()), 1000)
-    return () => clearTimeout(timer)
-  }, [resendAt, now])
+  if (status === 'signed-in' && !finishing && !completingLink) return <Navigate to={back} replace />
 
-  if (status === 'signed-in' && !finishing) return <Navigate to={back} replace />
+  async function finish(tokens: TokenResponse) {
+    setFinishing(true)
+    signedIn(tokens)
+    try {
+      await mergeGuestIntoAccount()
+    } catch {
+      toast('Signed in. Your cart could not be moved to your account yet and is kept on this device.')
+    }
+    await queryClient.invalidateQueries({ queryKey: ['cart'] })
+    await queryClient.invalidateQueries({ queryKey: ['wishlist'] })
+    toast(`Signed in as ${tokens.user.name ? firstName(tokens.user) : (tokens.user.email ?? 'shopper')}`)
+    navigate(back, { replace: true })
+  }
 
-  const digits = localDigits(phone)
-
-  function send(event?: FormEvent) {
-    event?.preventDefault()
-    if (!/^01[3-9]\d{8}$/.test(digits)) {
-      setError('Use an 11-digit number starting with 01.')
+  function submit(event: FormEvent) {
+    event.preventDefault()
+    setError('')
+    setNotice('')
+    if (askingForLink) {
+      emailLink.mutate({ mode: step === 'register' ? 'register' : 'forgot', email: email.trim() }, {
+        onSuccess: () => setNotice('If this address is eligible, we sent you a link. Check your inbox.'),
+        onError: (e) => setError(errorMessage(e)),
+      })
       return
     }
-    setError('')
-    requestOtp.mutate(digits, {
-      onSuccess: (sent) => {
-        setStep('code')
-        setCode('')
-        setResendAt(Date.now() + (sent?.resendAfterSeconds ?? 60) * 1000)
-        setNow(Date.now())
-        requestAnimationFrame(() => codeInput.current?.focus())
-      },
+    if (completingLink && !token) {
+      setError('Open the link from your email or request a new one.')
+      return
+    }
+    signIn.mutate({ mode, email: email.trim(), password, token }, {
+      onSuccess: finish,
       onError: (e) => setError(errorMessage(e)),
     })
   }
 
-  function verify(value = code) {
-    if (value.length !== 6) {
-      setError('Enter all 6 digits from the SMS.')
-      return
-    }
+  function changeStep(next: typeof step) {
+    setStep(next)
+    setPassword('')
+    setNotice('')
     setError('')
-    verifyOtp.mutate(
-      { phone: digits, code: value, deviceLabel: 'Web browser' },
-      {
-        onSuccess: async (tokens) => {
-          setFinishing(true)
-          signedIn(tokens)
-          try {
-            await mergeGuestIntoAccount()
-          } catch {
-            toast('Signed in. Your cart could not be moved to your account yet; it is kept on this device.')
-          }
-          await queryClient.invalidateQueries({ queryKey: ['cart'] })
-          await queryClient.invalidateQueries({ queryKey: ['wishlist'] })
-          toast(`Signed in as ${tokens.user.name ? firstName(tokens.user) : `+88 ${tokens.user.phone}`}`)
-          navigate(back, { replace: true })
-        },
-        onError: (e) => {
-          setError(errorMessage(e))
-          setCode('')
-          codeInput.current?.focus()
-        },
-      },
-    )
   }
 
-  const wait = Math.max(0, Math.ceil((resendAt - now) / 1000))
-  const fromCheckout = back === '/checkout'
-  const errorLine = (id: string, help: string) => (
-    <div id={id} aria-live="polite">
-      {error ? (
-        <span className="co-err" style={{ fontSize: 13 }}>
-          <Icon name="alert" small />
-          {error}
-        </span>
-      ) : (
-        <span className="help">{help}</span>
-      )}
-    </div>
-  )
-
-  const form =
-    step === 'phone' ? (
-      <form onSubmit={send} noValidate className="si-form">
+  const busy = signIn.isPending || emailLink.isPending || finishing
+  const form = (
+    <form className="si-form" onSubmit={submit}>
+      {!completingLink && (
         <div className="field">
-          <label htmlFor="au-phone">Mobile number</label>
-          <div className="prefix">
-            <span>+88</span>
-            <input
-              className="input"
-              id="au-phone"
-              type="tel"
-              inputMode="numeric"
-              autoComplete="tel-national"
-              placeholder="01XXXXXXXXX"
-              value={phone}
-              aria-invalid={error ? true : undefined}
-              aria-describedby="au-phone-msg"
-              onChange={(e) => setPhone(e.target.value)}
-            />
-          </div>
-          {errorLine('au-phone-msg', 'We text you a 6-digit code. New here? This also creates your account.')}
+          <label htmlFor="au-email">Email</label>
+          <input className="input" id="au-email" type="email" autoComplete="email" required maxLength={254}
+            value={email} onChange={(event) => setEmail(event.target.value)} />
         </div>
-        <button className="btn block" type="submit" disabled={requestOtp.isPending}>
-          {requestOtp.isPending ? 'Sending…' : 'Send code'}
-        </button>
-      </form>
-    ) : (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          verify()
-        }}
-        noValidate
-        className="si-form"
-      >
-        <p style={{ color: 'var(--text-2)' }}>
-          Enter the code we sent to <b style={{ color: 'var(--text)' }}>+88 {digits}</b>.{' '}
-          <button
-            type="button"
-            className="link"
-            style={{ border: 0, background: 'transparent', padding: 0 }}
-            onClick={() => {
-              setStep('phone')
-              setError('')
-            }}
-          >
-            Change
+      )}
+      {!askingForLink && (
+        <div className="field">
+          <label htmlFor="au-password">{completingLink ? 'New password' : 'Password'}</label>
+          <input className="input" id="au-password" type="password" required maxLength={64}
+            autoComplete={completingLink ? 'new-password' : 'current-password'}
+            value={password} onChange={(event) => setPassword(event.target.value)} />
+          {completingLink && <span className="help">Use 8 to 64 characters with a letter, number and symbol.</span>}
+        </div>
+      )}
+      {error && <p className="co-err" role="alert">{error}</p>}
+      {notice && <p role="status">{notice}</p>}
+      <button className="btn block" type="submit" disabled={busy}>
+        {busy ? 'Please wait…' : askingForLink ? 'Send email link' : completingLink ? 'Set password and sign in' : 'Sign in'}
+      </button>
+      {completingLink ? <Link className="link" to="/sign-in">Back to sign in</Link> : (
+        <>
+          {step === 'login' && <button className="link" type="button" disabled={busy} onClick={() => changeStep('forgot')}>Forgot password?</button>}
+          <button className="link" type="button" disabled={busy}
+            onClick={() => changeStep(step === 'login' ? 'register' : 'login')}>
+            {step === 'login' ? 'Create an account' : 'Back to sign in'}
           </button>
-        </p>
-        <CodeBoxes
-          ref={codeInput}
-          value={code}
-          disabled={verifyOtp.isPending}
-          invalid={!!error}
-          describedBy="au-code-msg"
-          onChange={(value) => {
-            setCode(value)
-            // The code arrives by SMS; signing in as soon as it is complete saves a tap.
-            if (value.length === 6) verify(value)
-          }}
-        />
-        {errorLine('au-code-msg', 'Signs you in as soon as all six digits are in. Code works for 5 minutes.')}
-        <button className="btn block" type="submit" disabled={verifyOtp.isPending}>
-          {verifyOtp.isPending ? 'Checking…' : 'Verify and sign in'}
-        </button>
-        <button
-          type="button"
-          className="link"
-          style={{ border: 0, background: 'transparent', padding: 0, alignSelf: 'center', ...(wait > 0 ? { color: 'var(--muted)' } : {}) }}
-          disabled={wait > 0 || requestOtp.isPending}
-          onClick={() => send()}
-        >
-          {wait > 0 ? `Send a new code in ${wait} s` : 'Send a new code'}
-        </button>
-      </form>
-    )
+        </>
+      )}
+    </form>
+  )
 
   const guest = (
     <Link className="link" to={fromCheckout ? '/checkout' : '/shop'} style={{ fontSize: 14 }}>
@@ -211,23 +151,21 @@ export function SignInPage() {
         <div className="si-hero-copy">
           <p className="eyebrow pink">Welcome back</p>
           <p className="display ph-only si-hero-title" aria-hidden="true">
-            Sign in with your phone.
+            Your account
           </p>
           <p className="display d-only si-hero-title">Your orders, wishlist and address in one place.</p>
         </div>
       </section>
       <section className="si-panel">
         <div className="si-col">
-          <h1 className="display si-h1">Sign in with your phone</h1>
-          <p className="d-only" style={{ color: 'var(--text-2)' }}>
-            No password. New here? The same code creates your account.
-          </p>
+          <h1 className="display si-h1">{title}</h1>
           {endNotice && (
             <div className="err-summary" role="alert" style={{ borderColor: 'var(--warn)' }}>
               {endNotice}
             </div>
           )}
           {form}
+          {!completingLink && step !== 'forgot' && <GoogleButton disabled={busy} onSignedIn={finish} />}
           <div className="ph-only si-perks">
             <p className="eyebrow">With an account you can</p>
             <p className="note">

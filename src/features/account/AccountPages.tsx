@@ -15,7 +15,7 @@ import { useSession } from '../auth/session'
 import { CardSkeletons, ProductCard } from '../catalog/ProductCard'
 import { OrderCard } from './OrderCard'
 
-/** Your name and receipt email; the number is how you sign in, so it is shown, not edited. */
+/** Profile details. A shopper’s sign-in email is displayed as read-only. */
 export function DetailsPage() {
   useTitle('Your details')
   return (
@@ -32,6 +32,7 @@ function DetailsForm() {
   const toast = useToast()
   const [name, setName] = useState(user?.name ?? '')
   const [email, setEmail] = useState(user?.email ?? '')
+  const signInEmail = user?.emailVerified === true
   const [error, setError] = useState('')
 
   function submit(event: FormEvent) {
@@ -59,14 +60,16 @@ function DetailsForm() {
       </div>
       <div className="field">
         <label htmlFor="me-email">
-          Email for receipts<span style={{ fontWeight: 400, color: 'var(--muted)' }}> (optional)</span>
+          {signInEmail ? 'Sign-in email' : 'Email for receipts (optional)'}
         </label>
-        <input className="input" id="me-email" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input className="input" id="me-email" readOnly={signInEmail} type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
       </div>
-      <div className="field">
-        <span style={{ fontSize: 13, fontWeight: 700 }}>Mobile number</span>
-        <p style={{ minHeight: 50, display: 'flex', alignItems: 'center', color: 'var(--text-2)' }}>+88 {user?.phone} · used to sign in</p>
-      </div>
+      {user?.phone && (
+        <div className="field">
+          <span style={{ fontSize: 13, fontWeight: 700 }}>Mobile number</span>
+          <p style={{ minHeight: 50, display: 'flex', alignItems: 'center', color: 'var(--text-2)' }}>+88 {user.phone}</p>
+        </div>
+      )}
       <div style={{ display: 'flex', alignItems: 'flex-end' }}>
         <button className="btn" type="submit" disabled={update.isPending}>
           {update.isPending ? 'Saving…' : 'Save details'}

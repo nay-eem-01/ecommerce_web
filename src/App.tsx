@@ -63,6 +63,8 @@ export default function App() {
         <Route path="/orders/:orderNumber" element={<OrderPage />} />
         <Route path="/help" element={<HelpPage />} />
         <Route path="/sign-in" element={<SignInPage />} />
+        <Route path="/verify-email" element={<SignInPage />} />
+        <Route path="/reset-password" element={<SignInPage />} />
         <Route element={<RequireAuth />}>
           <Route element={<AccountLayout />}>
             <Route path="/account" element={<OrdersPage />} />

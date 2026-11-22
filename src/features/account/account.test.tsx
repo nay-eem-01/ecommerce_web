@@ -17,6 +17,7 @@ const emptyPage = { content: [], pageNo: 0, pageSize: 20, totalElements: 0, tota
 const routes = (
   <Routes>
     <Route path="/sign-in" element={<SignInPage />} />
+    <Route path="/verify-email" element={<SignInPage />} />
     <Route element={<RequireAuth />}>
       <Route element={<AccountLayout />}>
         <Route path="/account" element={<OrdersPage />} />
@@ -46,48 +47,41 @@ describe('sign in', () => {
     expect(safeBack(null)).toBe('/account')
   })
 
-  it('checks the number, texts a code, signs in when 6 digits are typed and merges the browser cart', async () => {
+  it('signs in with email and password and merges the browser cart', async () => {
     localStorage.setItem('senpai.cart', JSON.stringify([{ productId: 7, optionId: null, quantity: 2 }]))
     localStorage.setItem('senpai.wishlist', JSON.stringify([9]))
     const fetchMock = mockApi({
       ...memberRoutes,
-      'POST /api/auth/otp/request': () => envelope(200, { expiresInSeconds: 300, resendAfterSeconds: 60 }),
-      'POST /api/auth/otp/verify': () => envelope(200, tokens),
+      'POST /api/auth/sign-in': () => envelope(200, tokens),
       'POST /api/cart/merge': () => envelope(200, { items: [], itemCount: 2, subtotal: 2900 }),
       'PUT /api/wishlist/9': () => envelope(200, null),
       'GET /api/orders/me': () => envelope(200, emptyPage),
     })
     renderWithProviders(routes, '/sign-in?back=/account/wishlist')
-    await userEvent.type(screen.getByLabelText('Mobile number'), '0171234567')
-    await userEvent.click(screen.getByRole('button', { name: 'Send code' }))
-    expect(screen.getByText('Use an 11-digit number starting with 01.')).toBeInTheDocument()
-    await userEvent.type(screen.getByLabelText('Mobile number'), '8')
-    await userEvent.click(screen.getByRole('button', { name: 'Send code' }))
-    expect(await screen.findByText('+88 01712345678')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Send a new code in \d+ s/ })).toBeDisabled()
-    await userEvent.type(screen.getByLabelText('Digit 1'), '123456')
+    await userEvent.type(screen.getByLabelText('Email'), 'shopper@example.com')
+    await userEvent.type(screen.getByLabelText('Password'), 'Test-password-1')
+    await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
     await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent('/account/wishlist'))
-    const verify = fetchMock.mock.calls.find(([u]) => String(u).endsWith('/otp/verify'))
-    expect(bodyOf(verify?.[1])).toMatchObject({ phone: '01712345678', code: '123456' })
+    const login = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/api/auth/sign-in'))
+    expect(bodyOf(login?.[1])).toEqual({ email: 'shopper@example.com', password: 'Test-password-1' })
     const merge = fetchMock.mock.calls.find(([u]) => String(u).endsWith('/api/cart/merge'))
     expect(bodyOf(merge?.[1])).toEqual({ items: [{ productId: 7, optionId: null, quantity: 2 }] })
     expect(localStorage.getItem('senpai.cart')).toBeNull()
     expect(localStorage.getItem('senpai.refreshToken')).toBe('refresh-2')
   })
 
-  it('shows the backend’s message for a wrong code and clears the field', async () => {
-    mockApi({
-      'POST /api/auth/otp/request': () => envelope(200, { expiresInSeconds: 300, resendAfterSeconds: 0 }),
-      'POST /api/auth/otp/verify': () => envelope(400, null, 'That code is not right. 4 tries left.'),
+  it('uses the email link token and the chosen password to activate an account', async () => {
+    const fetchMock = mockApi({
+      ...memberRoutes,
+      'POST /api/auth/verify-email': () => envelope(200, tokens),
+      'GET /api/orders/me': () => envelope(200, emptyPage),
     })
-    renderWithProviders(routes, '/sign-in')
-    await userEvent.type(screen.getByLabelText('Mobile number'), '01712345678')
-    await userEvent.click(screen.getByRole('button', { name: 'Send code' }))
-    await userEvent.type(await screen.findByLabelText('Digit 1'), '000000')
-    expect(await screen.findByText('That code is not right. 4 tries left.')).toBeInTheDocument()
-    expect(screen.getByLabelText('Digit 1')).toHaveValue('')
-    expect(screen.getByLabelText('Digit 6')).toHaveValue('')
-    expect(screen.getByRole('button', { name: 'Send a new code' })).toBeEnabled()
+    renderWithProviders(routes, '/verify-email#token=email-verification-token')
+    await userEvent.type(screen.getByLabelText('New password'), 'Test-password-1')
+    await userEvent.click(screen.getByRole('button', { name: 'Set password and sign in' }))
+    await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent('/account'))
+    const verify = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/api/auth/verify-email'))
+    expect(bodyOf(verify?.[1])).toEqual({ token: 'email-verification-token', password: 'Test-password-1' })
   })
 
   it('offers guest checkout when sign-in came from checkout', () => {
@@ -149,7 +143,7 @@ describe('account', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save details' }))
     expect(await screen.findByText('Details saved')).toBeInTheDocument()
     expect(bodyOf(fetchMock.mock.calls.find(([u, i]) => String(u).endsWith('/api/users/me') && i?.method === 'PUT')?.[1])).toEqual({ name: 'Nayeem A.', email: 'n@example.com' })
-    expect(screen.getByText('+88 01712345678 · used to sign in')).toBeInTheDocument()
+    expect(screen.getByText('+88 01712345678')).toBeInTheDocument()
   })
 
   it('lists saved products in the wishlist', async () => {

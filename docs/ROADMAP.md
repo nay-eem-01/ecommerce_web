@@ -53,3 +53,11 @@ Staff screens for the backend's insights API (its roadmap 4.5a/4.5b). Design and
 | 4.6 | Categories and characters: list, create and edit inline (slug from the name, sign, order, shown, coming soon), delete with confirmation | `claude/ecstatic-wozniak-r0uwbi` | ✅ |
 | 4.7 | Users (search, suspend, allow back) and reviews (filter, hide, publish); Playwright: a product with an uploaded photo in the shop | `claude/ecstatic-wozniak-r0uwbi` | ✅ |
 
+
+## Production authentication (`feat/production-auth-base`)
+
+| Step | Branch | Status |
+|---|---|---|
+| Shopper email and Google sign-in | `feat/shopper-auth` | ✅ |
+
+Progress: 1 of 1.

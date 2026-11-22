@@ -5,6 +5,13 @@ Plan and progress: `docs/ROADMAP.md`. Design: `docs/DESIGN.md`.
 
 ---
 
+## 2026-11-22 · Shopper authentication
+
+- **Done:** Added email registration and sign-in, password reset and Google sign-in.
+- **Decisions:** Reused checkout return paths and the existing cart and wishlist merge.
+- **Breaking API changes:** SMS sign-in is available only in development and test.
+- **Known limitations:** Google requires a configured client ID. Email setup and reset require SMTP.
+
 ## Where we are
 
 - Phase 2 (v1 storefront) is merged into `development`.
